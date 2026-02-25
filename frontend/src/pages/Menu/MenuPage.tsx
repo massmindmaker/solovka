@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fetchCategories, fetchMenuItems } from '@/api/menu'
+import { fetchMenuItems, fetchMenu } from '@/api/menu'
 import { useCartStore } from '@/store/cartStore'
 import { formatPrice, cn } from '@/utils'
 import { useTelegram } from '@/hooks/useTelegram'
@@ -92,11 +92,20 @@ export default function MenuPage() {
 
   const { addItem, items: cartItems } = useCartStore()
 
-  // Загружаем категории
+  // Загружаем все данные меню разом; если "Меню дня" пусто — переключаемся на первую непустую категорию
   useEffect(() => {
-    fetchCategories()
-      .then(setCategories)
-      .finally(() => setLoadingCats(false))
+    fetchMenu().then(({ categories: cats, items: allItems, dailyItemIds }) => {
+      setCategories(cats)
+      // Определяем стартовую вкладку
+      const dailyHasItems = dailyItemIds.length > 0
+      if (!dailyHasItems) {
+        // Найти первую категорию (кроме daily и business-lunch) у которой есть блюда
+        const fallback = cats.find(
+          (c) => c.slug !== 'daily' && c.slug !== 'business-lunch' && allItems.some((i) => i.categorySlug === c.slug)
+        )
+        if (fallback) setActiveSlug(fallback.slug)
+      }
+    }).finally(() => setLoadingCats(false))
   }, [])
 
   // Загружаем айтемы при смене категории

@@ -75,23 +75,24 @@ export function requireAuth(
     return null
   }
 
-  const initData = authHeader.slice(4)
+  const initData = authHeader.slice(4).trim()
 
-  // In development (BOT_TOKEN = "dev"), skip validation
-  if (botToken !== 'dev' && !validateInitData(initData, botToken)) {
+  // In development (BOT_TOKEN = "dev"), skip validation entirely
+  if (botToken === 'dev') {
+    const user = parseInitDataUser(initData)
+    return {
+      user: user ?? { id: 123456789, first_name: 'Dev', username: 'dev' },
+      initData,
+    }
+  }
+
+  if (!validateInitData(initData, botToken)) {
     res.status(401).json({ error: 'Invalid initData' })
     return null
   }
 
   const user = parseInitDataUser(initData)
   if (!user) {
-    // Fallback for dev mode with empty initData
-    if (botToken === 'dev') {
-      return {
-        user: { id: 123456789, first_name: 'Dev', username: 'dev' },
-        initData,
-      }
-    }
     res.status(401).json({ error: 'Cannot parse user from initData' })
     return null
   }
