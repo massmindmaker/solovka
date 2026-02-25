@@ -1,0 +1,40 @@
+{
+  "version": 2,
+  "buildCommand": "cd frontend && npm run build",
+  "outputDirectory": "frontend/dist",
+  "rewrites": [
+    { "source": "/api/menu",                      "destination": "/backend/api/menu/index.ts" },
+    { "source": "/api/orders",                    "destination": "/backend/api/orders/index.ts" },
+    { "source": "/api/payment/init",              "destination": "/backend/api/payment/init.ts" },
+    { "source": "/api/payment/webhook",           "destination": "/backend/api/payment/webhook.ts" },
+    { "source": "/api/talons/buy",                "destination": "/backend/api/talons/buy.ts" },
+    { "source": "/api/talons/webhook",            "destination": "/backend/api/talons/webhook.ts" },
+    { "source": "/api/subscriptions/buy",         "destination": "/backend/api/subscriptions/buy.ts" },
+    { "source": "/api/subscriptions/webhook",     "destination": "/backend/api/subscriptions/webhook.ts" },
+    { "source": "/api/users/me",                  "destination": "/backend/api/users/me.ts" },
+    { "source": "/api/users/me/notifications",    "destination": "/backend/api/users/me/notifications.ts" },
+    { "source": "/api/cron/daily-menu",           "destination": "/backend/api/cron/daily-menu.ts" },
+    { "source": "/((?!api/).*)",                  "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/daily-menu",
+      "schedule": "0 7 * * 1-5"
+    }
+  ],
+  "functions": {
+    "backend/api/**/*.ts": {
+      "runtime": "@vercel/node@5"
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,POST,PUT,DELETE,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Authorization,Content-Type" }
+      ]
+    }
+  ]
+}
