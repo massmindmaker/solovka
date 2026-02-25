@@ -49,9 +49,12 @@ CREATE TABLE IF NOT EXISTS daily_menu (
 CREATE INDEX IF NOT EXISTS idx_daily_menu_date ON daily_menu(date);
 
 -- ── Orders ───────────────────────────────────
-CREATE TYPE IF NOT EXISTS order_status AS ENUM (
-  'pending', 'paid', 'preparing', 'ready', 'delivered', 'cancelled'
-);
+DO $$ BEGIN
+  CREATE TYPE order_status AS ENUM (
+    'pending', 'paid', 'preparing', 'ready', 'delivered', 'cancelled'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS orders (
   id              SERIAL PRIMARY KEY,
@@ -80,9 +83,12 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 
 -- ── Payments ─────────────────────────────────
-CREATE TYPE IF NOT EXISTS payment_status AS ENUM (
-  'pending', 'confirmed', 'rejected', 'refunded'
-);
+DO $$ BEGIN
+  CREATE TYPE payment_status AS ENUM (
+    'pending', 'confirmed', 'rejected', 'refunded'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS payments (
   id                SERIAL PRIMARY KEY,
@@ -99,7 +105,10 @@ CREATE INDEX IF NOT EXISTS idx_payments_order_id         ON payments(order_id);
 CREATE INDEX IF NOT EXISTS idx_payments_tbank_payment_id ON payments(tbank_payment_id);
 
 -- ── Subscriptions ────────────────────────────
-CREATE TYPE IF NOT EXISTS subscription_type AS ENUM ('lunch', 'coffee', 'lunch_coffee');
+DO $$ BEGIN
+  CREATE TYPE subscription_type AS ENUM ('lunch', 'coffee', 'lunch_coffee');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS subscriptions (
   id          SERIAL PRIMARY KEY,
@@ -115,7 +124,10 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_user_id ON subscriptions(user_id);
 CREATE INDEX IF NOT EXISTS idx_subscriptions_active  ON subscriptions(active, expires_at);
 
 -- ── Talons ───────────────────────────────────
-CREATE TYPE IF NOT EXISTS talon_type AS ENUM ('lunch', 'coffee');
+DO $$ BEGIN
+  CREATE TYPE talon_type AS ENUM ('lunch', 'coffee');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE TABLE IF NOT EXISTS talons (
   id          SERIAL PRIMARY KEY,
