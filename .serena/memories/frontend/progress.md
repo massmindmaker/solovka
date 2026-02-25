@@ -1,6 +1,6 @@
 # Frontend — Прогресс разработки
 
-Последнее обновление: все страницы завершены, сборка проходит без ошибок.
+Последнее обновление: **26.02.2026** — все баги с пустым меню исправлены, подтверждено Playwright.
 
 ---
 
@@ -8,98 +8,94 @@
 
 | Задача | Статус |
 |--------|--------|
-| Scaffolding: Vite + React + TS | ✅ Done |
-| Dependencies | ✅ Done |
-| Config: vite, tsconfig, tailwind, aliases | ✅ Done |
-| Types | ✅ Done |
-| Utils | ✅ Done |
-| Hooks | ✅ Done |
-| Mock data | ✅ Done |
-| Stores | ✅ Done |
-| API client | ✅ Done |
-| App.tsx + routing | ✅ Done |
-| Components: base UI | ✅ Done |
-| MenuPage | ✅ Done |
-| ItemPage | ✅ Done |
-| CartPage | ✅ Done |
-| CheckoutPage | ✅ Done |
-| OrderSuccessPage | ✅ Done |
-| OrdersPage | ✅ Done |
-| ProfilePage | ✅ Done |
-| TalonsPage | ✅ Done |
+| Scaffolding, deps, config | ✅ Done |
+| Types, utils, hooks, stores | ✅ Done |
+| API client + modules | ✅ Done |
+| Все 8 страниц | ✅ Done |
+| Все компоненты | ✅ Done |
+| **Fix: /api/menu unified endpoint** | ✅ Done |
+| **Fix: auth header trailing space** | ✅ Done |
+| **Fix: MenuPage race condition** | ✅ Done |
 | tsc --noEmit clean | ✅ Done |
 | npm run build clean | ✅ Done |
+| **Playwright: меню видно в браузере** | ✅ Verified |
 
 ---
 
-## Страницы — краткое описание
+## Исправленные баги (все подтверждены Playwright)
 
-### OrdersPage (`/orders`)
-- Два таба: "Активные" (pending/paid/preparing/ready) + "История" (delivered/cancelled)
-- Каждый заказ — карточка `OrderCard` с номером, статусом, позициями (max 3 + "ещё N"), суммой, адресом, временем, датой
-- Клик по заказу → `/order-success/:id`
-- Пустое состояние с CTA "Перейти в меню" или "История пуста"
+### Баг 1 — неправильные API endpoints (ИСПРАВЛЕН)
+`menu.ts` вызывал `/api/menu/categories` и `/api/menu/items` → 404.
+Рефакторинг: единый `fetchMenu()` → `/api/menu` + module-level cache.
 
-### ProfilePage (`/profile`)
-- Аватар с инициалом + имя + username
-- Секция "Талоны": баланс обеденных и кофейных, кнопка "Пополнить →"
-- Секция "Подписки": статус каждого плана из `SUBSCRIPTION_PLANS`, кнопка "Купить" или бейдж "Активна" + дата истечения
-- Секция "Уведомления": Toggle компонент для `notifyDailyMenu` с оптимистичным обновлением
+### Баг 2 — Vercel стрипает trailing space в Authorization header (ИСПРАВЛЕН)
+`Authorization: tma ` (пробел без данных) → Vercel обрезает → `"tma"` → `startsWith('tma ')` = false → 401.
+Фикс: `authHeader.trim()`, проверка `startsWith('tma')`, `slice(3).trim()`.
 
-### TalonsPage (`/talons`)
-- Два таба-кнопки: "🍱 Обед" / "☕ Кофе" с балансом
-- Список пакетов `TALON_PACKAGES` с ценой за талон и общей ценой
-- История транзакций (мок-данные, API для истории пока не реализован на беке)
-- Описание про срок действия
+### Баг 3 — Race condition: fetchMenuItems('daily') до setActiveSlug (ИСПРАВЛЕН)
+`activeSlug` стартовал как `'daily'` → второй useEffect сразу запускал `fetchMenuItems('daily')` — до того как первый useEffect определил нужный slug.
+Фикс: `activeSlug` стартует как `null`, второй useEffect гвардится `if (!activeSlug) return`.
+
+### Баг 4 — "Меню дня" пусто по умолчанию (ИСПРАВЛЕН)
+`dailyItemIds: []` → категория `daily` показывала "Пусто".
+Фикс: если `dailyItemIds.length === 0`, ищем первую непустую категорию (кроме daily/business-lunch).
 
 ---
 
-## Важные исправления при сборке
+## API модули (`frontend/src/api/menu.ts`)
 
-1. `PaymentMethod` — живёт в `@/types`, не в `@/utils` (CheckoutPage.tsx исправлен)
-2. `Spinner` — default export, не named export (OrdersPage.tsx исправлен)
-3. `profile` spread в async callbacks — TypeScript не видит null guard, использован `profile!` (non-null assertion)
-4. `@tailwindcss/vite` — не был установлен (добавлен через npm install)
+```typescript
+interface MenuResponse { categories, items, dailyItemIds }
+
+fetchMenu()           // GET /api/menu — один запрос, module-level cache
+fetchCategories()     // из кеша
+fetchMenuItems(slug?) // из кеша, фильтр: 'daily'=по dailyItemIds, иначе по categorySlug
+fetchMenuItem(id)     // из кеша, поиск по id
+clearMenuCache()      // сброс кеша
+```
 
 ---
 
-## Структура файлов (финал)
+## MenuPage.tsx — логика загрузки
+
+```
+mount
+  → fetchMenu() [одни запрос, кешируется]
+      ↓ resolve
+      setCategories(cats)
+      if dailyItemIds.length > 0 → activeSlug = 'daily'
+      else → activeSlug = первая непустая категория
+  → activeSlug changes (null → slug)
+      → fetchMenuItems(activeSlug) → setItems
+```
+
+---
+
+## Playwright диагностика (production)
+
+Результат после всех исправлений:
+```
+DOM: categoryTabs=7, menuCards=4, JS errors=0
+API: /api/users/me → 200, /api/menu → 200
+Показывается: Холодные закуски (4 позиции)
+```
+
+---
+
+## Структура файлов
 
 ```
 frontend/src/
-├── types/index.ts
-├── utils/index.ts
-├── mock/data.ts
-├── hooks/
-│   ├── useTelegram.ts
-│   ├── useMainButton.ts
-│   └── useBackButton.ts
-├── store/
-│   ├── cartStore.ts
-│   └── userStore.ts
 ├── api/
-│   ├── client.ts
-│   ├── menu.ts
+│   ├── client.ts          Authorization: tma + initData (пустая → dev fallback)
+│   ├── menu.ts            ✅ ИСПРАВЛЕН: fetchMenu() + cache
 │   ├── orders.ts
 │   └── profile.ts
-├── components/
-│   ├── Spinner.tsx         — default export + named FullScreenSpinner
-│   ├── EmptyState.tsx
-│   ├── Counter.tsx
-│   ├── BottomNav.tsx
-│   └── StatusBadge.tsx
 ├── pages/
-│   ├── Menu/MenuPage.tsx
+│   ├── Menu/MenuPage.tsx  ✅ ИСПРАВЛЕН: race condition fix
 │   ├── Item/ItemPage.tsx
-│   ├── Cart/CartPage.tsx
-│   ├── Checkout/CheckoutPage.tsx
-│   ├── OrderSuccess/OrderSuccessPage.tsx
-│   ├── Orders/OrdersPage.tsx
-│   ├── Profile/ProfilePage.tsx
-│   └── Talons/TalonsPage.tsx
-├── App.tsx
-├── main.tsx
-└── index.css
+│   └── ... (6 других страниц)
+└── ...
 ```
 
 ## Маршруты

@@ -34,6 +34,16 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
   return api.post<Order>('/orders', payload)
 }
 
+export async function fetchOrder(id: number): Promise<Order> {
+  if (IS_DEV) {
+    const order = MOCK_ORDERS.find((o) => o.id === id)
+    if (order) return Promise.resolve(order)
+    // Return first mock order if id not found (dev only)
+    return Promise.resolve({ ...MOCK_ORDERS[0], id })
+  }
+  return api.get<Order>(`/orders/${id}`)
+}
+
 export async function initPayment(orderId: number): Promise<{ paymentUrl: string }> {
   if (IS_DEV) {
     return Promise.resolve({

@@ -1,103 +1,281 @@
-import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { fetchOrders } from '@/api/orders'
+import { useEffect, useState, useRef } from 'react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { fetchOrder } from '@/api/orders'
 import { useMainButton } from '@/hooks/useMainButton'
 import { useTelegram } from '@/hooks/useTelegram'
-import { formatPrice } from '@/utils'
-import type { Order } from '@/types'
+import { formatPrice, cn } from '@/utils'
+import { FullScreenSpinner } from '@/components/Spinner'
+import type { Order, OrderStatus } from '@/types'
+
+// ─── Шаги статуса (pipeline) ─────────────────────────────
+
+const STATUS_STEPS: { status: OrderStatus; label: string; icon: string }[] = [
+  { status: 'pending',   label: 'Принят',    icon: '📋' },
+  { status: 'paid',      label: 'Оплачен',   icon: '💳' },
+  { status: 'preparing', label: 'Готовится', icon: '👨‍🍳' },
+  { status: 'ready',     label: 'Готов',     icon: '✅' },
+  { status: 'delivered', label: 'Доставлен', icon: '🎉' },
+]
+
+const STATUS_ORDER: OrderStatus[] = ['pending', 'paid', 'preparing', 'ready', 'delivered']
+
+function getStepIndex(status: OrderStatus): number {
+  return STATUS_ORDER.indexOf(status)
+}
+
+// ─── Stepper компонент ────────────────────────────────────
+
+function OrderStepper({ status }: { status: OrderStatus }) {
+  const currentIdx = getStepIndex(status)
+  const isCancelled = status === 'cancelled'
+
+  if (isCancelled) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-4">
+        <span className="text-3xl">❌</span>
+        <span className="text-base font-semibold text-red-500">Заказ отменён</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-full">
+      <div className="flex items-center">
+        {STATUS_STEPS.map((step, idx) => {
+          const isDone = idx < currentIdx
+          const isActive = idx === currentIdx
+          const isLast = idx === STATUS_STEPS.length - 1
+
+          return (
+            <div key={step.status} className="flex items-center flex-1 last:flex-none">
+              {/* Точка */}
+              <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                <div className={cn(
+                  'w-8 h-8 rounded-full flex items-center justify-center text-sm transition-all duration-500',
+                  isDone
+                    ? 'bg-green-500 text-white shadow-sm'
+                    : isActive
+                      ? 'bg-[var(--tg-theme-button-color)] text-white shadow-md ring-4 ring-[var(--tg-theme-button-color)] ring-opacity-20'
+                      : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-hint-color)]',
+                )}>
+                  {isDone ? '✓' : step.icon}
+                </div>
+                <span className={cn(
+                  'text-[10px] font-medium whitespace-nowrap',
+                  isActive
+                    ? 'text-[var(--tg-theme-button-color)]'
+                    : isDone
+                      ? 'text-green-600'
+                      : 'text-[var(--tg-theme-hint-color)]',
+                )}>
+                  {step.label}
+                </span>
+              </div>
+
+              {/* Линия между шагами */}
+              {!isLast && (
+                <div className={cn(
+                  'flex-1 h-0.5 mx-1 transition-all duration-500',
+                  idx < currentIdx ? 'bg-green-500' : 'bg-[var(--tg-theme-secondary-bg-color)]',
+                )} />
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Строка позиции ───────────────────────────────────────
+
+function OrderItemRow({ name, quantity, priceKopecks }: {
+  name: string; quantity: number; priceKopecks: number
+}) {
+  return (
+    <div className="flex justify-between items-start gap-2 py-2 border-b border-[var(--tg-theme-secondary-bg-color)] last:border-0">
+      <span className="text-sm text-[var(--tg-theme-text-color)] flex-1 leading-snug">
+        {name}
+        {quantity > 1 && (
+          <span className="text-[var(--tg-theme-hint-color)]"> × {quantity}</span>
+        )}
+      </span>
+      <span className="text-sm font-semibold text-[var(--tg-theme-text-color)] whitespace-nowrap">
+        {formatPrice(priceKopecks * quantity)}
+      </span>
+    </div>
+  )
+}
+
+// ─── Главный компонент ────────────────────────────────────
+
+const POLL_INTERVAL_MS = 12000 // обновлять статус каждые 12 сек
+const FINAL_STATUSES: OrderStatus[] = ['delivered', 'cancelled']
 
 export default function OrderSuccessPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const { haptic } = useTelegram()
-  const [order, setOrder] = useState<Order | null>(null)
 
+  // Получаем заказ из nav state (от CheckoutPage) или загружаем по API
+  const [order, setOrder] = useState<Order | null>(
+    (location.state as { order?: Order })?.order ?? null
+  )
+  const [loading, setLoading] = useState(!order)
+  const prevStatusRef = useRef<OrderStatus | null>(order?.status ?? null)
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Первичная загрузка если нет в state
   useEffect(() => {
-    haptic.notificationOccurred('success')
-    // Загружаем список заказов и находим нужный
-    fetchOrders().then((orders) => {
-      const found = orders.find((o) => o.id === Number(id))
-      if (found) setOrder(found)
-    })
+    if (!id) return
+    if (order) {
+      haptic.notificationOccurred('success')
+      return
+    }
+    fetchOrder(Number(id))
+      .then((data) => {
+        setOrder(data)
+        haptic.notificationOccurred('success')
+      })
+      .catch(() => navigate('/', { replace: true }))
+      .finally(() => setLoading(false))
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Polling статуса заказа
+  useEffect(() => {
+    if (!order || FINAL_STATUSES.includes(order.status)) return
+
+    pollingRef.current = setInterval(async () => {
+      try {
+        const updated = await fetchOrder(Number(id))
+        setOrder(updated)
+
+        // Вибрация при смене статуса
+        if (prevStatusRef.current && prevStatusRef.current !== updated.status) {
+          haptic.notificationOccurred('success')
+          prevStatusRef.current = updated.status
+        }
+
+        // Остановить polling на финальных статусах
+        if (FINAL_STATUSES.includes(updated.status)) {
+          clearInterval(pollingRef.current!)
+        }
+      } catch {
+        // Игнорируем ошибки поллинга — попробуем снова через интервал
+      }
+    }, POLL_INTERVAL_MS)
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current)
+    }
+  }, [order?.status, id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useMainButton({
     text: 'Вернуться в меню',
     onClick: () => navigate('/', { replace: true }),
   })
 
+  if (loading) return <FullScreenSpinner />
+  if (!order) return null
+
+  const isActive = !FINAL_STATUSES.includes(order.status)
+
   return (
-    <div className="flex flex-col items-center min-h-screen px-6 pt-16 pb-32 animate-fade-in">
-      {/* Иконка успеха */}
-      <div className="text-7xl mb-6">✅</div>
+    <div className="flex flex-col min-h-screen bg-[var(--tg-theme-secondary-bg-color)] animate-fade-in">
 
-      <h1 className="text-2xl font-bold text-[var(--tg-theme-text-color)] text-center mb-1">
-        Заказ принят!
-      </h1>
-      <p className="text-[var(--tg-theme-hint-color)] text-center text-sm mb-8">
-        Мы уведомим вас в Telegram, когда заказ будет готов
-      </p>
+      {/* Шапка с иконкой */}
+      <div className="bg-[var(--tg-theme-bg-color)] px-4 pt-8 pb-6 text-center">
+        <div className={cn(
+          'w-20 h-20 rounded-full flex items-center justify-center text-4xl mx-auto mb-4 transition-all',
+          order.status === 'delivered'
+            ? 'bg-green-100'
+            : order.status === 'cancelled'
+              ? 'bg-red-100'
+              : 'bg-blue-100',
+        )}>
+          {order.status === 'delivered' ? '🎉' : order.status === 'cancelled' ? '❌' : '✅'}
+        </div>
+        <h1 className="text-xl font-bold text-[var(--tg-theme-text-color)]">
+          {order.status === 'delivered'
+            ? 'Заказ доставлен!'
+            : order.status === 'cancelled'
+              ? 'Заказ отменён'
+              : 'Заказ принят!'}
+        </h1>
+        <p className="text-sm text-[var(--tg-theme-hint-color)] mt-1">
+          Заказ №{order.id}
+        </p>
+        {isActive && (
+          <p className="text-xs text-[var(--tg-theme-hint-color)] mt-1">
+            Статус обновляется автоматически
+          </p>
+        )}
+      </div>
 
-      {/* Карточка заказа */}
-      {order && (
-        <div className="w-full bg-[var(--tg-theme-secondary-bg-color)] rounded-2xl p-4 space-y-3">
-          {/* Номер заказа */}
-          <div className="flex justify-between items-center pb-3 border-b border-[var(--tg-theme-bg-color)]">
-            <span className="text-[var(--tg-theme-hint-color)] text-sm">Заказ</span>
-            <span className="font-bold text-[var(--tg-theme-text-color)]">#{order.id}</span>
-          </div>
+      <div className="flex-1 px-4 py-4 space-y-4">
 
-          {/* Позиции */}
-          <div className="space-y-1.5">
-            {order.items.map((item) => (
-              <div key={item.id} className="flex justify-between text-sm">
-                <span className="text-[var(--tg-theme-text-color)] flex-1 mr-2">
-                  {item.itemName}
-                  {item.quantity > 1 && (
-                    <span className="text-[var(--tg-theme-hint-color)]"> × {item.quantity}</span>
-                  )}
-                </span>
-                <span className="text-[var(--tg-theme-text-color)] font-medium whitespace-nowrap">
-                  {formatPrice(item.priceKopecks * item.quantity)}
+        {/* ── Статус-стрипер ──────────────────────────── */}
+        <div className="bg-[var(--tg-theme-bg-color)] rounded-2xl px-4 py-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--tg-theme-hint-color)] mb-4">
+            Статус заказа
+          </p>
+          <OrderStepper status={order.status} />
+        </div>
+
+        {/* ── Детали доставки ─────────────────────────── */}
+        <div className="bg-[var(--tg-theme-bg-color)] rounded-2xl px-4 py-4 space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--tg-theme-hint-color)]">
+            Детали
+          </p>
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-[var(--tg-theme-hint-color)]">📍 Доставка</span>
+              <span className="font-medium text-[var(--tg-theme-text-color)]">{order.deliveryRoom}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-[var(--tg-theme-hint-color)]">🕐 Время</span>
+              <span className="font-medium text-[var(--tg-theme-text-color)]">{order.deliveryTime}</span>
+            </div>
+            {order.paidWith && (
+              <div className="flex justify-between text-sm">
+                <span className="text-[var(--tg-theme-hint-color)]">💳 Оплата</span>
+                <span className="font-medium text-[var(--tg-theme-text-color)]">
+                  {order.paidWith === 'card' ? 'Картой' : order.paidWith === 'talon' ? 'Талон' : 'Подписка'}
                 </span>
               </div>
-            ))}
+            )}
+            {order.comment && (
+              <div className="flex justify-between text-sm gap-2">
+                <span className="text-[var(--tg-theme-hint-color)] flex-shrink-0">💬 Комментарий</span>
+                <span className="font-medium text-[var(--tg-theme-text-color)] text-right">{order.comment}</span>
+              </div>
+            )}
           </div>
+        </div>
 
-          {/* Итого */}
-          <div className="pt-2 border-t border-[var(--tg-theme-bg-color)] flex justify-between font-bold">
-            <span className="text-[var(--tg-theme-text-color)]">Итого</span>
-            <span className="text-[var(--tg-theme-button-color)]">
+        {/* ── Состав заказа ───────────────────────────── */}
+        <div className="bg-[var(--tg-theme-bg-color)] rounded-2xl px-4 py-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--tg-theme-hint-color)] mb-3">
+            Состав заказа
+          </p>
+          {order.items.map((item) => (
+            <OrderItemRow
+              key={item.id}
+              name={item.itemName}
+              quantity={item.quantity}
+              priceKopecks={item.priceKopecks}
+            />
+          ))}
+          <div className="flex justify-between items-center pt-3 mt-1">
+            <span className="text-sm font-bold text-[var(--tg-theme-text-color)]">Итого</span>
+            <span className="text-lg font-bold text-[var(--tg-theme-button-color)]">
               {formatPrice(order.totalKopecks)}
             </span>
           </div>
-
-          {/* Детали доставки */}
-          <div className="pt-2 border-t border-[var(--tg-theme-bg-color)] space-y-1">
-            <Detail icon="📍" value={order.deliveryRoom} />
-            <Detail icon="🕐" value={order.deliveryTime} />
-            {order.comment && <Detail icon="💬" value={order.comment} />}
-          </div>
         </div>
-      )}
 
-      {/* Заглушка пока грузится */}
-      {!order && (
-        <div className="w-full bg-[var(--tg-theme-secondary-bg-color)] rounded-2xl p-4">
-          <p className="text-center text-[var(--tg-theme-hint-color)] text-sm">
-            Заказ #{id} создан
-          </p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function Detail({ icon, value }: { icon: string; value: string }) {
-  return (
-    <div className="flex items-center gap-2 text-sm text-[var(--tg-theme-text-color)]">
-      <span>{icon}</span>
-      <span>{value}</span>
+      </div>
     </div>
   )
 }

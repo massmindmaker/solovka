@@ -3,8 +3,9 @@ import { cn } from '@/utils'
 import { useCartStore } from '@/store/cartStore'
 
 const NAV_ITEMS = [
-  { to: '/', icon: '🍽', label: 'Меню', exact: true },
-  { to: '/orders', icon: '📋', label: 'Заказы', exact: false },
+  { to: '/',        icon: '🍽', label: 'Меню',    exact: true  },
+  { to: '/cart',    icon: '🛒', label: 'Корзина', exact: false },
+  { to: '/orders',  icon: '📋', label: 'Заказы',  exact: false },
   { to: '/profile', icon: '👤', label: 'Профиль', exact: false },
 ]
 
@@ -30,10 +31,9 @@ export default function BottomNav() {
           >
             <div className="relative">
               <span className="text-2xl leading-none">{icon}</span>
-              {/* Бейдж корзины на иконке меню */}
-              {to === '/' && totalCount > 0 && (
-                <span className="absolute -top-1 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--tg-theme-button-color)] px-1 text-[10px] font-bold text-[var(--tg-theme-button-text-color)]">
-                  {totalCount}
+              {to === '/cart' && totalCount > 0 && (
+                <span className="absolute -top-1 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                  {totalCount > 99 ? '99+' : totalCount}
                 </span>
               )}
             </div>
