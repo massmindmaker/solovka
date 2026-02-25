@@ -85,31 +85,33 @@ export default function MenuPage() {
 
   const [categories, setCategories] = useState<Category[]>([])
   const [items, setItems] = useState<MenuItem[]>([])
-  const [activeSlug, setActiveSlug] = useState<string>('daily')
+  // null = стартовая вкладка ещё не определена (ждём ответа API)
+  const [activeSlug, setActiveSlug] = useState<string | null>(null)
   const [loadingCats, setLoadingCats] = useState(true)
   const [loadingItems, setLoadingItems] = useState(false)
   const tabsRef = useRef<HTMLDivElement>(null)
 
   const { addItem, items: cartItems } = useCartStore()
 
-  // Загружаем все данные меню разом; если "Меню дня" пусто — переключаемся на первую непустую категорию
+  // Шаг 1: загружаем меню, определяем стартовую вкладку
   useEffect(() => {
     fetchMenu().then(({ categories: cats, items: allItems, dailyItemIds }) => {
       setCategories(cats)
-      // Определяем стартовую вкладку
       const dailyHasItems = dailyItemIds.length > 0
-      if (!dailyHasItems) {
-        // Найти первую категорию (кроме daily и business-lunch) у которой есть блюда
+      if (dailyHasItems) {
+        setActiveSlug('daily')
+      } else {
         const fallback = cats.find(
           (c) => c.slug !== 'daily' && c.slug !== 'business-lunch' && allItems.some((i) => i.categorySlug === c.slug)
         )
-        if (fallback) setActiveSlug(fallback.slug)
+        setActiveSlug(fallback?.slug ?? cats[0]?.slug ?? 'daily')
       }
     }).finally(() => setLoadingCats(false))
   }, [])
 
-  // Загружаем айтемы при смене категории
+  // Шаг 2: загружаем айтемы только когда activeSlug известен
   useEffect(() => {
+    if (!activeSlug) return
     setLoadingItems(true)
     fetchMenuItems(activeSlug)
       .then(setItems)
@@ -185,7 +187,7 @@ export default function MenuPage() {
 
       {/* Контент */}
       <div className="flex-1 px-4 pb-4 overflow-y-auto">
-        {loadingItems ? (
+        {(loadingItems || !activeSlug) ? (
           <div className="flex justify-center py-16">
             <Spinner size="lg" />
           </div>
