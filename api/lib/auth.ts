@@ -69,13 +69,14 @@ export function requireAuth(
     return null
   }
 
-  const authHeader = req.headers.authorization ?? ''
-  if (!authHeader.startsWith('tma ')) {
+  const authHeader = (req.headers.authorization ?? '').trim()
+  if (!authHeader.startsWith('tma')) {
     res.status(401).json({ error: 'Missing Authorization header' })
     return null
   }
 
-  const initData = authHeader.slice(4).trim()
+  // Strip "tma" prefix and optional space
+  const initData = authHeader.slice(3).trim()
 
   // In development (BOT_TOKEN = "dev"), skip validation entirely
   if (botToken === 'dev') {
