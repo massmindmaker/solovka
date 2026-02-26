@@ -54,49 +54,43 @@ function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
       </div>
 
       {/* Контент */}
-      <div className="p-3">
+      <div className="p-3 flex flex-col gap-2">
         <p className="text-sm font-medium text-[var(--tg-theme-text-color)] leading-snug line-clamp-2 min-h-[2.5rem]">
           {item.name}
         </p>
-        <div className="flex items-center justify-between mt-2 gap-1">
-          <span className="text-sm font-bold text-[var(--tg-theme-text-color)] shrink-0">
-            {formatPrice(item.priceKopecks)}
-          </span>
 
-          {/* Инлайн-счётчик: + → [− qty +] */}
-          {cartQty === 0 ? (
+        {/* Кнопка добавления / счётчик — на всю ширину */}
+        {cartQty === 0 ? (
+          <button
+            onClick={handleAdd}
+            className="w-full flex items-center justify-center gap-1 py-2 rounded-xl bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-sm font-bold active:opacity-80 transition-opacity"
+          >
+            {formatPrice(item.priceKopecks)}
+          </button>
+        ) : (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full flex items-center justify-between rounded-xl bg-[var(--tg-theme-button-color)] overflow-hidden"
+          >
+            <button
+              onClick={handleRemove}
+              className="flex items-center justify-center w-10 py-2 text-[var(--tg-theme-button-text-color)] text-lg font-bold active:opacity-70 transition-opacity"
+              aria-label="Убрать"
+            >
+              −
+            </button>
+            <span className="text-sm font-bold text-[var(--tg-theme-button-text-color)]">
+              {cartQty}
+            </span>
             <button
               onClick={handleAdd}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-xl font-bold shrink-0 active:opacity-70 transition-opacity"
-              aria-label="Добавить"
+              className="flex items-center justify-center w-10 py-2 text-[var(--tg-theme-button-text-color)] text-lg font-bold active:opacity-70 transition-opacity"
+              aria-label="Добавить ещё"
             >
               +
             </button>
-          ) : (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1"
-            >
-              <button
-                onClick={handleRemove}
-                className="w-7 h-7 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-base font-bold flex items-center justify-center active:opacity-70 transition-opacity"
-                aria-label="Убрать"
-              >
-                −
-              </button>
-              <span className="min-w-[1.25rem] text-center text-sm font-bold text-[var(--tg-theme-text-color)]">
-                {cartQty}
-              </span>
-              <button
-                onClick={handleAdd}
-                className="w-7 h-7 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-base font-bold flex items-center justify-center active:opacity-70 transition-opacity"
-                aria-label="Добавить ещё"
-              >
-                +
-              </button>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Бейдж "бизнес-ланч" */}

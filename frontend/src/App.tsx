@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { useTelegram } from '@/hooks/useTelegram'
 import { useUserStore } from '@/store/userStore'
 import { fetchProfile } from '@/api/profile'
@@ -15,9 +15,15 @@ import OrdersPage from '@/pages/Orders/OrdersPage'
 import ProfilePage from '@/pages/Profile/ProfilePage'
 import TalonsPage from '@/pages/Talons/TalonsPage'
 
+// Страницы без BottomNav — не нужен нижний паддинг
+const NO_NAV_PATTERNS = ['/item/', '/checkout', '/order-success/']
+
 function AppContent() {
   const { tg } = useTelegram()
   const { loading, setProfile, setLoading } = useUserStore()
+  const { pathname } = useLocation()
+
+  const hideNav = NO_NAV_PATTERNS.some((p) => pathname.startsWith(p))
 
   useEffect(() => {
     tg.ready()
@@ -35,7 +41,7 @@ function AppContent() {
 
   return (
     <div className="flex flex-col min-h-screen min-h-dvh bg-[var(--tg-theme-bg-color)]">
-      <main className="flex-1 pb-16">
+      <main className={`flex-1 ${hideNav ? '' : 'pb-16'}`}>
         <Routes>
           <Route path="/" element={<MenuPage />} />
           <Route path="/item/:id" element={<ItemPage />} />

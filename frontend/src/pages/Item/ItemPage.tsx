@@ -152,15 +152,16 @@ export default function ItemPage() {
         )}
       </div>
 
-      {/* Нативная кнопка — резерв на случай если MainButton не показывается */}
-      <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
+      {/* Кнопка «Добавить в корзину» — sticky внизу */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pt-3 pb-4 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]"
+           style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         <button
           onClick={handleAddToCart}
           disabled={!item.available}
           className={cn(
-            'w-full py-3.5 rounded-2xl text-base font-semibold transition-opacity',
+            'w-full py-4 rounded-2xl text-base font-bold transition-all',
             item.available
-              ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] active:opacity-80'
+              ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] active:scale-[0.98] active:opacity-90'
               : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-hint-color)] cursor-not-allowed',
           )}
         >

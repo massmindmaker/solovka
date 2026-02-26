@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { cn } from '@/utils'
 import { useCartStore } from '@/store/cartStore'
 
@@ -9,8 +9,15 @@ const NAV_ITEMS = [
   { to: '/profile', icon: '👤', label: 'Профиль', exact: false },
 ]
 
+// Страницы, на которых BottomNav скрыт (детали товара, чекаут, успех)
+const HIDDEN_PATTERNS = ['/item/', '/checkout', '/order-success/']
+
 export default function BottomNav() {
   const totalCount = useCartStore((s) => s.totalCount())
+  const { pathname } = useLocation()
+
+  // Скрываем навигацию на страницах с полноэкранными CTA-кнопками
+  if (HIDDEN_PATTERNS.some((p) => pathname.startsWith(p))) return null
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
