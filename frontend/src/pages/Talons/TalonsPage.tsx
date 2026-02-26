@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '@/store/userStore'
 import { buyTalons } from '@/api/profile'
 import { useTelegram } from '@/hooks/useTelegram'
@@ -49,13 +50,13 @@ function TypeTab({ active, icon, label, balance, onClick }: TypeTabProps) {
       className={[
         'flex-1 flex flex-col items-center gap-1 py-3 rounded-xl transition-colors',
         active
-          ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]'
+          ? 'bg-emerald-500 text-white'
           : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)]',
       ].join(' ')}
     >
       <span className="text-2xl leading-none">{icon}</span>
       <span className="text-xs font-medium">{label}</span>
-      <span className={['text-sm font-bold', active ? 'opacity-90' : 'text-[var(--tg-theme-button-color)]'].join(' ')}>
+      <span className={['text-sm font-bold', active ? 'opacity-90' : 'text-emerald-600'].join(' ')}>
         {balance} {plural(balance, 'талон', 'талона', 'талонов')}
       </span>
     </button>
@@ -88,7 +89,7 @@ function PackageCard({ quantity, priceKopecks, badge, loading, onBuy }: PackageC
             {quantity} талонов
           </span>
           {badge && (
-            <span className="text-xs font-semibold text-[var(--tg-theme-button-text-color)] bg-[var(--tg-theme-button-color)] px-2 py-0.5 rounded-full">
+            <span className="text-xs font-semibold text-white bg-emerald-500 px-2 py-0.5 rounded-full">
               {badge}
             </span>
           )}
@@ -98,7 +99,7 @@ function PackageCard({ quantity, priceKopecks, badge, loading, onBuy }: PackageC
         </p>
       </div>
       <div className="text-right">
-        <p className="font-bold text-[var(--tg-theme-button-color)] text-lg">
+          <p className="font-bold text-emerald-600 text-lg">
           {formatPrice(priceKopecks)}
         </p>
       </div>
@@ -134,6 +135,7 @@ function TxRow({ delta, description, createdAt }: TxRowProps) {
 // ─── Main page ───────────────────────────────────────────
 
 export default function TalonsPage() {
+  const navigate = useNavigate()
   const { haptic, tg } = useTelegram()
   const { profile, setProfile } = useUserStore()
   const [selectedType, setSelectedType] = useState<TalonType>('lunch')
@@ -185,10 +187,21 @@ export default function TalonsPage() {
     <div className="flex flex-col min-h-screen">
       {/* Шапка */}
       <header className="px-4 pt-4 pb-3">
-        <h1 className="text-xl font-bold text-[var(--tg-theme-text-color)]">Талоны</h1>
-        <p className="text-sm text-[var(--tg-theme-hint-color)] mt-0.5">
-          Предоплатите обеды и кофе по сниженной цене
-        </p>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] text-lg active:opacity-70 transition-opacity"
+            aria-label="Назад"
+          >
+            ←
+          </button>
+          <div>
+            <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Талоны</h1>
+            <p className="text-sm text-[var(--tg-theme-hint-color)] mt-0.5">
+              Предоплатите обеды и кофе по сниженной цене
+            </p>
+          </div>
+        </div>
       </header>
 
       <div className="flex-1 px-4 pb-6 space-y-6 animate-fade-in">

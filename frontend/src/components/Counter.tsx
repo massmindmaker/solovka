@@ -34,8 +34,8 @@ export default function Counter({
         disabled={value <= min}
         className={cn(
           'flex items-center justify-center rounded-lg font-bold transition-opacity',
-          'text-[var(--tg-theme-button-color)] disabled:opacity-30',
-          isSmall ? 'w-6 h-6 text-lg' : 'w-8 h-8 text-xl',
+          'text-emerald-600 disabled:opacity-30',
+          isSmall ? 'w-8 h-8 text-lg' : 'w-10 h-10 text-xl',
         )}
       >
         −
@@ -55,8 +55,8 @@ export default function Counter({
         disabled={value >= max}
         className={cn(
           'flex items-center justify-center rounded-lg font-bold transition-opacity',
-          'text-[var(--tg-theme-button-color)] disabled:opacity-30',
-          isSmall ? 'w-6 h-6 text-lg' : 'w-8 h-8 text-xl',
+          'text-emerald-600 disabled:opacity-30',
+          isSmall ? 'w-8 h-8 text-lg' : 'w-10 h-10 text-xl',
         )}
       >
         +

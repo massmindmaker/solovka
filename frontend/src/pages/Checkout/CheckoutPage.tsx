@@ -63,7 +63,7 @@ function PaymentOption({ icon, label, sublabel, selected, onSelect, disabled }: 
       className={cn(
         'w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl text-left transition-all',
         selected
-          ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] shadow-sm'
+          ? 'bg-emerald-500 text-white shadow-sm'
           : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)]',
         disabled && 'opacity-40 cursor-not-allowed',
       )}
@@ -230,7 +230,7 @@ export default function CheckoutPage() {
           >
             ←
           </button>
-          <h1 className="text-xl font-bold text-[var(--tg-theme-text-color)]">Оформление заказа</h1>
+          <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Оформление заказа</h1>
         </div>
       </header>
 
@@ -260,7 +260,7 @@ export default function CheckoutPage() {
           </div>
           <div className="px-4 py-3 bg-[var(--tg-theme-secondary-bg-color)] flex justify-between items-center">
             <span className="text-sm font-bold text-[var(--tg-theme-text-color)]">Итого</span>
-            <span className="text-lg font-bold text-[var(--tg-theme-button-color)]">{formatPrice(total)}</span>
+            <span className="text-lg font-bold text-emerald-600">{formatPrice(total)}</span>
           </div>
         </div>
 
@@ -278,16 +278,16 @@ export default function CheckoutPage() {
                 maxLength={80}
                 autoComplete="off"
                 className={cn(
-                  'w-full px-4 py-3 rounded-xl text-sm outline-none transition-all',
+                  'w-full px-4 py-3 rounded-xl text-base outline-none transition-all',
                   'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)]',
                   'placeholder:text-[var(--tg-theme-hint-color)]',
-                  roomError ? 'ring-2 ring-red-400' : 'focus:ring-2 focus:ring-[var(--tg-theme-button-color)]',
+                  roomError ? 'ring-2 ring-red-400' : 'focus:ring-2 focus:ring-emerald-500',
                 )}
               />
 
               {/* Выпадающий список подсказок */}
               {roomSuggestionsOpen && filteredSuggestions.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-[var(--tg-theme-bg-color)] rounded-xl shadow-lg border border-[var(--tg-theme-secondary-bg-color)] overflow-hidden animate-fade-in max-h-48 overflow-y-auto">
+                <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-[var(--tg-theme-bg-color)] rounded-xl shadow-lg border border-[var(--tg-theme-secondary-bg-color)] overflow-hidden animate-slide-up max-h-48 overflow-y-auto">
                   {filteredSuggestions.map((s) => (
                     <button
                       key={s}
@@ -295,7 +295,7 @@ export default function CheckoutPage() {
                       className={cn(
                         'w-full text-left px-4 py-2.5 text-sm transition-colors',
                         s === deliveryRoom
-                          ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]'
+                          ? 'bg-emerald-500 text-white'
                           : 'text-[var(--tg-theme-text-color)] hover:bg-[var(--tg-theme-secondary-bg-color)] active:bg-[var(--tg-theme-secondary-bg-color)]',
                       )}
                     >
@@ -328,7 +328,7 @@ export default function CheckoutPage() {
                   className={cn(
                     'px-4 py-2 rounded-xl text-sm font-semibold transition-all',
                     deliveryTime === time
-                      ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] shadow-sm'
+                      ? 'bg-emerald-500 text-white shadow-sm'
                       : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)]',
                   )}
                 >
@@ -382,7 +382,7 @@ export default function CheckoutPage() {
               placeholder="Без лука, аллергия на орехи..."
               rows={2}
               maxLength={200}
-              className="w-full px-4 py-3 rounded-xl bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] placeholder:text-[var(--tg-theme-hint-color)] outline-none text-sm resize-none focus:ring-2 focus:ring-[var(--tg-theme-button-color)] transition-all"
+              className="w-full px-4 py-3 rounded-xl bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] placeholder:text-[var(--tg-theme-hint-color)] outline-none text-base resize-none focus:ring-2 focus:ring-emerald-500 transition-all"
             />
             {comment.length > 150 && (
               <p className="text-xs text-[var(--tg-theme-hint-color)] mt-1 text-right">

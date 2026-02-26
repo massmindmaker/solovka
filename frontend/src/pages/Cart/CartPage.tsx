@@ -40,7 +40,7 @@ function CartRow({ item, onRemove, onQuantityChange }: CartRowProps) {
         <p className="text-xs text-[var(--tg-theme-hint-color)] mt-0.5">
           {formatPrice(item.priceKopecks)} / шт.
         </p>
-        <p className="text-sm font-bold text-[var(--tg-theme-button-color)] mt-1">
+        <p className="text-sm font-bold text-emerald-600 mt-1">
           {formatPrice(item.priceKopecks * item.quantity)}
         </p>
       </div>
@@ -49,7 +49,7 @@ function CartRow({ item, onRemove, onQuantityChange }: CartRowProps) {
       <div className="flex flex-col items-end gap-2 flex-shrink-0">
         <button
           onClick={() => { haptic.impactOccurred('light'); onRemove() }}
-          className="text-[var(--tg-theme-hint-color)] w-6 h-6 flex items-center justify-center rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] transition-colors text-sm"
+          className="text-[var(--tg-theme-hint-color)] w-9 h-9 flex items-center justify-center rounded-full hover:bg-[var(--tg-theme-secondary-bg-color)] active:bg-red-50 transition-colors text-sm"
           aria-label="Удалить"
         >
           ✕
@@ -113,7 +113,7 @@ export default function CartPage() {
     return (
       <div className="flex flex-col h-full min-h-screen">
         <header className="px-4 pt-4 pb-2">
-          <h1 className="text-xl font-bold text-[var(--tg-theme-text-color)]">Корзина</h1>
+          <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Корзина</h1>
         </header>
         <div className="flex-1 flex items-center justify-center">
           <EmptyState
@@ -123,7 +123,7 @@ export default function CartPage() {
             action={
               <button
                 onClick={() => navigate('/')}
-                className="mt-2 px-5 py-2 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-sm font-medium"
+                className="mt-2 px-5 py-2.5 rounded-full bg-emerald-500 text-white text-sm font-bold active:bg-emerald-600 transition-colors"
               >
                 Перейти в меню
               </button>
@@ -145,11 +145,20 @@ export default function CartPage() {
       {/* Шапка */}
       <header className="sticky top-0 z-10 bg-[var(--tg-theme-bg-color)] px-4 pt-4 pb-3 border-b border-[var(--tg-theme-secondary-bg-color)]">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-[var(--tg-theme-text-color)]">Корзина</h1>
-            <p className="text-xs text-[var(--tg-theme-hint-color)] mt-0.5">
-              {uniqueCount} {positionLabel}
-            </p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="w-9 h-9 flex items-center justify-center rounded-full bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] text-lg active:opacity-70 transition-opacity"
+              aria-label="Назад"
+            >
+              ←
+            </button>
+            <div>
+              <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Корзина</h1>
+              <p className="text-xs text-[var(--tg-theme-hint-color)] mt-0.5">
+                {uniqueCount} {positionLabel}
+              </p>
+            </div>
           </div>
           <button
             onClick={handleClear}
@@ -196,7 +205,7 @@ export default function CartPage() {
         <div className="border-t border-dashed border-[var(--tg-theme-secondary-bg-color)] pt-2 mt-2">
           <div className="flex justify-between items-center">
             <span className="text-base font-bold text-[var(--tg-theme-text-color)]">Итого</span>
-            <span className="text-xl font-bold text-[var(--tg-theme-button-color)]">
+            <span className="text-xl font-bold text-emerald-600">
               {formatPrice(total)}
             </span>
           </div>

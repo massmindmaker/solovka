@@ -31,7 +31,7 @@ export default function BottomNav() {
               cn(
                 'flex flex-1 flex-col items-center justify-center gap-0.5 text-xs transition-colors',
                 isActive
-                  ? 'text-[var(--tg-theme-button-color)]'
+                  ? 'text-emerald-600'
                   : 'text-[var(--tg-theme-hint-color)]',
               )
             }
@@ -39,7 +39,9 @@ export default function BottomNav() {
             <div className="relative">
               <span className="text-2xl leading-none">{icon}</span>
               {to === '/cart' && totalCount > 0 && (
-                <span className="absolute -top-1 -right-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                <span className="absolute -top-1.5 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white animate-bounce-in"
+                      key={totalCount} /* re-mount triggers bounce on count change */
+                >
                   {totalCount > 99 ? '99+' : totalCount}
                 </span>
               )}

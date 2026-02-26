@@ -4,7 +4,7 @@ import { fetchOrders } from '@/api/orders'
 import { formatPrice, formatDateTime, ACTIVE_ORDER_STATUSES } from '@/utils'
 import EmptyState from '@/components/EmptyState'
 import StatusBadge from '@/components/StatusBadge'
-import Spinner from '@/components/Spinner'
+import { OrdersSkeleton } from '@/components/Skeleton'
 import type { Order } from '@/types'
 
 type Tab = 'active' | 'history'
@@ -87,7 +87,7 @@ export default function OrdersPage() {
     <div className="flex flex-col min-h-screen">
       {/* Шапка */}
       <header className="sticky top-0 z-10 bg-[var(--tg-theme-bg-color)] px-4 pt-4 pb-0">
-        <h1 className="text-xl font-bold text-[var(--tg-theme-text-color)] mb-3">Заказы</h1>
+        <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)] mb-3">Заказы</h1>
 
         {/* Табы */}
         <div className="flex gap-1 bg-[var(--tg-theme-secondary-bg-color)] rounded-xl p-1">
@@ -108,9 +108,7 @@ export default function OrdersPage() {
       {/* Контент */}
       <div className="flex-1 px-4 py-4">
         {loading ? (
-          <div className="flex justify-center pt-16">
-            <Spinner size="lg" />
-          </div>
+          <OrdersSkeleton />
         ) : shown.length === 0 ? (
           <div className="flex items-center justify-center pt-8">
             {tab === 'active' ? (
@@ -121,7 +119,7 @@ export default function OrdersPage() {
                 action={
                   <button
                     onClick={() => navigate('/')}
-                    className="mt-2 text-[var(--tg-theme-button-color)] font-medium"
+                    className="mt-2 text-emerald-600 font-medium"
                   >
                     Перейти в меню →
                   </button>
@@ -171,7 +169,7 @@ function TabButton({ active, onClick, label, badge }: TabButtonProps) {
     >
       {label}
       {badge !== undefined && (
-        <span className="min-w-[18px] h-[18px] rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-xs flex items-center justify-center px-1">
+        <span className="min-w-[18px] h-[18px] rounded-full bg-emerald-500 text-white text-xs flex items-center justify-center px-1">
           {badge}
         </span>
       )}

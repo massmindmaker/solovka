@@ -55,15 +55,15 @@ function OrderStepper({ status }: { status: OrderStatus }) {
                   isDone
                     ? 'bg-green-500 text-white shadow-sm'
                     : isActive
-                      ? 'bg-[var(--tg-theme-button-color)] text-white shadow-md ring-4 ring-[var(--tg-theme-button-color)] ring-opacity-20'
+                      ? 'bg-emerald-500 text-white shadow-md ring-4 ring-emerald-500/20 animate-pulse-once'
                       : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-hint-color)]',
                 )}>
                   {isDone ? '✓' : step.icon}
                 </div>
                 <span className={cn(
-                  'text-[10px] font-medium whitespace-nowrap',
+                  'text-xs font-medium whitespace-nowrap',
                   isActive
-                    ? 'text-[var(--tg-theme-button-color)]'
+                    ? 'text-emerald-600'
                     : isDone
                       ? 'text-green-600'
                       : 'text-[var(--tg-theme-hint-color)]',
@@ -196,7 +196,7 @@ export default function OrderSuccessPage() {
         )}>
           {order.status === 'delivered' ? '🎉' : order.status === 'cancelled' ? '❌' : '✅'}
         </div>
-        <h1 className="text-xl font-bold text-[var(--tg-theme-text-color)]">
+        <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">
           {order.status === 'delivered'
             ? 'Заказ доставлен!'
             : order.status === 'cancelled'
@@ -213,14 +213,14 @@ export default function OrderSuccessPage() {
         )}
       </div>
 
-      <div className="flex-1 px-4 py-4 space-y-4">
+      <div className="flex-1 px-4 py-4 pb-28 space-y-4">
 
         {/* ── Статус-стрипер ──────────────────────────── */}
         <div className="bg-[var(--tg-theme-bg-color)] rounded-2xl px-4 py-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-[var(--tg-theme-hint-color)] mb-4">
             Статус заказа
           </p>
-          <OrderStepper status={order.status} />
+          <OrderStepper key={order.status} status={order.status} />
         </div>
 
         {/* ── Детали доставки ─────────────────────────── */}
@@ -269,12 +269,23 @@ export default function OrderSuccessPage() {
           ))}
           <div className="flex justify-between items-center pt-3 mt-1">
             <span className="text-sm font-bold text-[var(--tg-theme-text-color)]">Итого</span>
-            <span className="text-lg font-bold text-[var(--tg-theme-button-color)]">
+            <span className="text-lg font-bold text-emerald-600">
               {formatPrice(order.totalKopecks)}
             </span>
           </div>
         </div>
 
+      </div>
+
+      {/* Нативная кнопка «В меню» — sticky внизу */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pt-3 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]"
+           style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+        <button
+          onClick={() => navigate('/', { replace: true })}
+          className="w-full py-4 rounded-2xl text-base font-bold bg-emerald-500 text-white active:bg-emerald-600 transition-colors"
+        >
+          Вернуться в меню
+        </button>
       </div>
     </div>
   )

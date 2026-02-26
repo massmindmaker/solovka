@@ -6,7 +6,7 @@ import { useBackButton } from '@/hooks/useBackButton'
 import { useMainButton } from '@/hooks/useMainButton'
 import { useTelegram } from '@/hooks/useTelegram'
 import { formatPrice, cn } from '@/utils'
-import { FullScreenSpinner } from '@/components/Spinner'
+import { ItemSkeleton } from '@/components/Skeleton'
 import Counter from '@/components/Counter'
 import type { MenuItem } from '@/types'
 
@@ -73,7 +73,7 @@ export default function ItemPage() {
     onClick: handleAddToCart,
   })
 
-  if (loading) return <FullScreenSpinner />
+  if (loading) return <ItemSkeleton />
   if (!item) return (
     <div className="flex items-center justify-center h-screen text-[var(--tg-theme-hint-color)]">
       Блюдо не найдено
@@ -119,7 +119,7 @@ export default function ItemPage() {
         </h1>
 
         <div className="mt-2 flex items-center gap-3">
-          <span className="text-2xl font-bold text-[var(--tg-theme-button-color)]">
+          <span className="text-2xl font-bold text-emerald-600">
             {formatPrice(item.priceKopecks)}
           </span>
           {!item.available && (

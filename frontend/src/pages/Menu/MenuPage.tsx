@@ -4,7 +4,7 @@ import { fetchMenuItems, fetchMenu } from '@/api/menu'
 import { useCartStore } from '@/store/cartStore'
 import { formatPrice, cn } from '@/utils'
 import { useTelegram } from '@/hooks/useTelegram'
-import Spinner from '@/components/Spinner'
+import { MenuSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
 import type { Category, MenuItem } from '@/types'
 
@@ -45,7 +45,7 @@ function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
       className="relative bg-[var(--tg-theme-secondary-bg-color)] rounded-2xl overflow-hidden active:scale-[0.97] transition-transform cursor-pointer select-none"
     >
       {/* Изображение */}
-      <div className="aspect-square bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
+      <div className="aspect-[4/3] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
         {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
         ) : (
@@ -70,7 +70,7 @@ function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
         ) : (
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full flex items-center justify-between rounded-xl bg-emerald-500 overflow-hidden"
+            className="w-full flex items-center justify-between rounded-xl bg-emerald-500 overflow-hidden animate-bounce-in"
           >
             <button
               onClick={handleRemove}
@@ -95,7 +95,7 @@ function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
 
       {/* Бейдж "бизнес-ланч" */}
       {item.isBusinessLunch && (
-        <div className="absolute top-2 left-2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+        <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
           Ланч
         </div>
       )}
@@ -184,13 +184,13 @@ export default function MenuPage() {
   return (
     <div className="flex flex-col h-full">
       {/* Шапка */}
-      <header className="sticky top-0 z-30 bg-[var(--tg-theme-bg-color)] pt-3">
+      <header className="sticky top-0 z-30 bg-[var(--tg-theme-bg-color)] pt-3 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
         <div className="px-4 pb-2 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-[var(--tg-theme-text-color)]">🍽 Столовая</h1>
+          <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">🍽 Столовая</h1>
           {totalCount > 0 && (
             <button
               onClick={() => navigate('/cart')}
-              className="flex items-center gap-2 bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] px-3 py-1.5 rounded-full text-sm font-medium animate-fade-in"
+              className="flex items-center gap-2 bg-emerald-500 text-white px-3 py-1.5 rounded-full text-sm font-bold active:bg-emerald-600 transition-colors animate-fade-in"
             >
               <span>🛒</span>
               <span>{formatPrice(totalKopecks)}</span>
@@ -212,7 +212,7 @@ export default function MenuPage() {
                 className={cn(
                   'flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
                   activeSlug === cat.slug
-                    ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]'
+                    ? 'bg-emerald-500 text-white'
                     : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)]',
                 )}
               >
@@ -227,9 +227,7 @@ export default function MenuPage() {
       {/* Контент */}
       <div className="flex-1 px-4 pb-4 overflow-y-auto">
         {(loadingItems || !activeSlug) ? (
-          <div className="flex justify-center py-16">
-            <Spinner size="lg" />
-          </div>
+          <MenuSkeleton />
         ) : items.length === 0 ? (
           <EmptyState
             icon="🍳"
@@ -237,7 +235,7 @@ export default function MenuPage() {
             description="В этой категории пока нет блюд"
           />
         ) : (
-          <div className="grid grid-cols-2 gap-3 animate-fade-in">
+          <div key={activeSlug} className="grid grid-cols-2 gap-3 animate-fade-in">
             {items.map((item) => (
               <MenuCard
                 key={item.id}

@@ -4,6 +4,7 @@ import { useUserStore } from '@/store/userStore'
 import { toggleNotification } from '@/api/profile'
 import { useTelegram } from '@/hooks/useTelegram'
 import { formatPrice, formatDate, plural, SUBSCRIPTION_PLANS } from '@/utils'
+import { ProfileSkeleton } from '@/components/Skeleton'
 import type { SubscriptionType } from '@/types'
 
 // ─── Subscription status card ────────────────────────────
@@ -50,7 +51,7 @@ function SubscriptionCard({
         ) : (
           <button
             onClick={onBuy}
-            className="flex-shrink-0 text-xs font-semibold text-[var(--tg-theme-button-text-color)] bg-[var(--tg-theme-button-color)] px-3 py-1.5 rounded-lg active:opacity-80 transition-opacity"
+            className="flex-shrink-0 text-xs font-semibold text-white bg-emerald-500 px-3 py-1.5 rounded-lg active:bg-emerald-600 transition-colors"
           >
             Купить
           </button>
@@ -78,7 +79,14 @@ export default function ProfilePage() {
   const { profile, setProfile } = useUserStore()
   const [notifyLoading, setNotifyLoading] = useState(false)
 
-  if (!profile) return null
+  if (!profile) return (
+    <div className="flex flex-col min-h-screen">
+      <header className="px-4 pt-4 pb-3">
+        <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Профиль</h1>
+      </header>
+      <ProfileSkeleton />
+    </div>
+  )
 
   const { user, talons, subscriptions } = profile
 
@@ -121,7 +129,7 @@ export default function ProfilePage() {
     <div className="flex flex-col min-h-screen">
       {/* Шапка */}
       <header className="px-4 pt-4 pb-3">
-        <h1 className="text-xl font-bold text-[var(--tg-theme-text-color)]">Профиль</h1>
+        <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Профиль</h1>
       </header>
 
       <div className="flex-1 px-4 pb-6 space-y-6 animate-fade-in">
@@ -159,7 +167,7 @@ export default function ProfilePage() {
           </div>
           <button
             onClick={() => navigate('/talons')}
-            className="mt-2 w-full py-2.5 rounded-xl text-sm font-medium text-[var(--tg-theme-button-color)] bg-[var(--tg-theme-secondary-bg-color)] active:opacity-80 transition-opacity"
+            className="mt-2 w-full py-2.5 rounded-xl text-sm font-semibold text-emerald-600 bg-emerald-50 active:bg-emerald-100 transition-colors"
           >
             Пополнить талоны →
           </button>
@@ -192,9 +200,9 @@ export default function ProfilePage() {
           {subscriptions.length === 0 && (
             <p className="text-xs text-[var(--tg-theme-hint-color)] px-1 mt-2">
               Подписка даёт безлимитный доступ к блюдам выбранного типа в течение месяца.{' '}
-              <span className="text-[var(--tg-theme-button-color)]">
+                <span className="text-emerald-600">
                 {formatPrice(350000)}/мес — обед
-              </span>
+               </span>
             </p>
           )}
         </div>
@@ -258,7 +266,7 @@ function Toggle({
       disabled={loading}
       className={[
         'relative w-12 h-7 rounded-full transition-colors duration-200',
-        enabled ? 'bg-[var(--tg-theme-button-color)]' : 'bg-gray-300',
+        enabled ? 'bg-emerald-500' : 'bg-gray-300',
         loading ? 'opacity-60' : '',
       ].join(' ')}
       aria-label="Toggle notification"

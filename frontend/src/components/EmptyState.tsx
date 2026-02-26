@@ -7,7 +7,7 @@ interface EmptyStateProps {
 
 export default function EmptyState({ icon, title, description, action }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
       <div className="text-6xl mb-4">{icon}</div>
       <h3 className="text-lg font-semibold text-[var(--tg-theme-text-color)] mb-1">
         {title}
