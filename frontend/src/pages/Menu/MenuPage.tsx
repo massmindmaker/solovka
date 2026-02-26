@@ -63,28 +63,28 @@ function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
         {cartQty === 0 ? (
           <button
             onClick={handleAdd}
-            className="w-full flex items-center justify-center gap-1 py-2 rounded-xl bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-sm font-bold active:opacity-80 transition-opacity"
+            className="w-full flex items-center justify-center gap-1 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold active:bg-emerald-600 transition-colors"
           >
             {formatPrice(item.priceKopecks)}
           </button>
         ) : (
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full flex items-center justify-between rounded-xl bg-[var(--tg-theme-button-color)] overflow-hidden"
+            className="w-full flex items-center justify-between rounded-xl bg-emerald-500 overflow-hidden"
           >
             <button
               onClick={handleRemove}
-              className="flex items-center justify-center w-10 py-2 text-[var(--tg-theme-button-text-color)] text-lg font-bold active:opacity-70 transition-opacity"
+              className="flex items-center justify-center w-10 py-2.5 text-white text-lg font-bold active:bg-emerald-600 transition-colors"
               aria-label="Убрать"
             >
               −
             </button>
-            <span className="text-sm font-bold text-[var(--tg-theme-button-text-color)]">
+            <span className="text-sm font-bold text-white">
               {cartQty}
             </span>
             <button
               onClick={handleAdd}
-              className="flex items-center justify-center w-10 py-2 text-[var(--tg-theme-button-text-color)] text-lg font-bold active:opacity-70 transition-opacity"
+              className="flex items-center justify-center w-10 py-2.5 text-white text-lg font-bold active:bg-emerald-600 transition-colors"
               aria-label="Добавить ещё"
             >
               +
@@ -120,18 +120,22 @@ export default function MenuPage() {
   const { addItem, removeItem, updateQuantity, items: cartItems } = useCartStore()
 
   // Шаг 1: загружаем меню, определяем стартовую вкладку
+  // Скрываем пустые категории из табов (daily без айтемов, пустые категории)
   useEffect(() => {
     fetchMenu().then(({ categories: cats, items: allItems, dailyItemIds }) => {
-      setCategories(cats)
       const dailyHasItems = dailyItemIds.length > 0
-      if (dailyHasItems) {
-        setActiveSlug('daily')
-      } else {
-        const fallback = cats.find(
-          (c) => c.slug !== 'daily' && c.slug !== 'business-lunch' && allItems.some((i) => i.categorySlug === c.slug)
-        )
-        setActiveSlug(fallback?.slug ?? cats[0]?.slug ?? 'daily')
-      }
+
+      // Фильтруем: оставляем только категории с товарами
+      const visibleCats = cats.filter((c) => {
+        if (c.slug === 'daily') return dailyHasItems
+        return allItems.some((i) => i.categorySlug === c.slug)
+      })
+
+      setCategories(visibleCats)
+
+      // Стартовая вкладка — первая непустая
+      const first = visibleCats[0]
+      setActiveSlug(first?.slug ?? 'daily')
     }).finally(() => setLoadingCats(false))
   }, [])
 

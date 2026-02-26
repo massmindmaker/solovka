@@ -84,8 +84,8 @@ export default function ItemPage() {
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in">
-      {/* Изображение / заглушка */}
-      <div className="relative w-full aspect-square bg-gradient-to-br from-orange-100 to-amber-50 flex items-center justify-center flex-shrink-0">
+      {/* Изображение / заглушка — уменьшено, чтобы кнопка Добавить была видна */}
+      <div className="relative w-full h-56 bg-gradient-to-br from-orange-100 to-amber-50 flex items-center justify-center flex-shrink-0">
         {item.imageUrl ? (
           <img
             src={item.imageUrl}
@@ -93,17 +93,27 @@ export default function ItemPage() {
             className="w-full h-full object-cover"
           />
         ) : (
-          <span className="text-[8rem] leading-none">{emoji}</span>
+          <span className="text-7xl leading-none">{emoji}</span>
         )}
+
+        {/* Кнопка «Назад» поверх изображения */}
+        <button
+          onClick={() => navigate(-1)}
+          className="absolute top-3 left-3 w-9 h-9 flex items-center justify-center rounded-full bg-black/40 text-white text-lg backdrop-blur-sm active:bg-black/60 transition-colors"
+          aria-label="Назад"
+        >
+          ←
+        </button>
+
         {item.isBusinessLunch && (
-          <div className="absolute top-4 left-4 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
+          <div className="absolute top-3 right-3 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-full">
             Бизнес-ланч
           </div>
         )}
       </div>
 
       {/* Детали */}
-      <div className="flex-1 bg-[var(--tg-theme-bg-color)] rounded-t-3xl -mt-4 px-5 pt-6 pb-32">
+      <div className="flex-1 bg-[var(--tg-theme-bg-color)] rounded-t-3xl -mt-4 px-5 pt-6 pb-28">
         <h1 className="text-2xl font-bold text-[var(--tg-theme-text-color)] leading-tight">
           {item.name}
         </h1>
@@ -161,15 +171,15 @@ export default function ItemPage() {
           className={cn(
             'w-full py-4 rounded-2xl text-base font-bold transition-all',
             item.available
-              ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] active:scale-[0.98] active:opacity-90'
-              : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-hint-color)] cursor-not-allowed',
+              ? 'bg-emerald-500 text-white active:bg-emerald-600'
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed',
           )}
         >
           {!item.available
             ? 'Недоступно'
             : isInCart
-            ? `Обновить в корзине — ${formatPrice(total)}`
-            : `Добавить в корзину — ${formatPrice(total)}`}
+            ? `Обновить — ${formatPrice(total)}`
+            : `Добавить — ${formatPrice(total)}`}
         </button>
       </div>
     </div>

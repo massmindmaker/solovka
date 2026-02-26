@@ -220,12 +220,21 @@ export default function CheckoutPage() {
   return (
     <div className="flex flex-col min-h-screen animate-fade-in bg-[var(--tg-theme-secondary-bg-color)]">
 
-      {/* Шапка */}
+      {/* Шапка с кнопкой Назад */}
       <header className="sticky top-0 z-10 bg-[var(--tg-theme-bg-color)] px-4 pt-4 pb-3 border-b border-[var(--tg-theme-secondary-bg-color)]">
-        <h1 className="text-xl font-bold text-[var(--tg-theme-text-color)]">Оформление заказа</h1>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="w-9 h-9 flex items-center justify-center rounded-full bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)] text-lg active:opacity-70 transition-opacity"
+            aria-label="Назад"
+          >
+            ←
+          </button>
+          <h1 className="text-xl font-bold text-[var(--tg-theme-text-color)]">Оформление заказа</h1>
+        </div>
       </header>
 
-      <div className="flex-1 px-4 py-4 pb-32 space-y-4">
+      <div className="flex-1 px-4 py-4 pb-28 space-y-4">
 
         {/* ── 1. СВОДКА ЗАКАЗА (ПЕРВОЙ!) ────────────────── */}
         <div className="bg-[var(--tg-theme-bg-color)] rounded-2xl overflow-hidden">
@@ -383,6 +392,23 @@ export default function CheckoutPage() {
           </Section>
         </div>
 
+      </div>
+
+      {/* Нативная кнопка «Оплатить» — sticky внизу */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pt-3 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]"
+           style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className={cn(
+            'w-full py-4 rounded-2xl text-base font-bold transition-all',
+            submitting
+              ? 'bg-gray-300 text-gray-500 cursor-wait'
+              : 'bg-emerald-500 text-white active:bg-emerald-600',
+          )}
+        >
+          {submitting ? 'Оформляем...' : `Оплатить — ${formatPrice(total)}`}
+        </button>
       </div>
     </div>
   )
