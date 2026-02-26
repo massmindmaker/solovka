@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useCartStore } from '@/store/cartStore'
 import { useUserStore } from '@/store/userStore'
@@ -11,6 +11,24 @@ import type { DeliveryTime } from '@/utils'
 import type { CreateOrderPayload, PaymentMethod } from '@/types'
 
 const SAVED_ROOM_KEY = 'solovka_last_room'
+
+// Список популярных мест доставки — настройте под реальные кабинеты
+const ROOM_SUGGESTIONS = [
+  'Кабинет 101',
+  'Кабинет 102',
+  'Кабинет 201',
+  'Кабинет 202',
+  'Кабинет 301',
+  'Кабинет 302',
+  'Кабинет 303',
+  'Кабинет 304',
+  'Кабинет 305',
+  'Переговорная А',
+  'Переговорная Б',
+  'Опенспейс 1 этаж',
+  'Опенспейс 2 этаж',
+  'Ресепшн',
+]
 
 // ─── Секция формы ─────────────────────────────────────────
 
@@ -81,11 +99,13 @@ export default function CheckoutPage() {
     () => localStorage.getItem(SAVED_ROOM_KEY) ?? ''
   )
   const [roomError, setRoomError] = useState('')
+  const [roomSuggestionsOpen, setRoomSuggestionsOpen] = useState(false)
   const [deliveryTime, setDeliveryTime] = useState<DeliveryTime>('12:00')
   const [comment, setComment] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card')
   const [submitting, setSubmitting] = useState(false)
   const roomInputRef = useRef<HTMLInputElement>(null)
+  const roomWrapRef = useRef<HTMLDivElement>(null)
 
   const lunchBalance = getTalonBalance('lunch')
   const hasLunchSub = hasActiveSubscription('lunch')
@@ -102,8 +122,36 @@ export default function CheckoutPage() {
   function handleRoomChange(val: string) {
     setDeliveryRoom(val)
     setRoomError('')
+    setRoomSuggestionsOpen(val.length > 0)
     localStorage.setItem(SAVED_ROOM_KEY, val)
   }
+
+  function handleRoomSelect(val: string) {
+    setDeliveryRoom(val)
+    setRoomError('')
+    setRoomSuggestionsOpen(false)
+    localStorage.setItem(SAVED_ROOM_KEY, val)
+    haptic.selectionChanged()
+  }
+
+  // Закрываем список при клике вне
+  const handleOutsideClick = useCallback((e: MouseEvent) => {
+    if (roomWrapRef.current && !roomWrapRef.current.contains(e.target as Node)) {
+      setRoomSuggestionsOpen(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    document.addEventListener('mousedown', handleOutsideClick)
+    return () => document.removeEventListener('mousedown', handleOutsideClick)
+  }, [handleOutsideClick])
+
+  // Фильтруем подсказки по введённому тексту
+  const filteredSuggestions = deliveryRoom.trim().length === 0
+    ? ROOM_SUGGESTIONS
+    : ROOM_SUGGESTIONS.filter((s) =>
+        s.toLowerCase().includes(deliveryRoom.toLowerCase())
+      )
 
   // Валидация
   function validate(): boolean {
@@ -210,14 +258,16 @@ export default function CheckoutPage() {
         {/* ── 2. КУДА ДОСТАВИТЬ ─────────────────────────── */}
         <div className="bg-[var(--tg-theme-bg-color)] rounded-2xl px-4 py-4 space-y-3">
           <Section title="📍 Куда доставить">
-            <div>
+            <div ref={roomWrapRef} className="relative">
               <input
                 ref={roomInputRef}
                 type="text"
                 value={deliveryRoom}
                 onChange={(e) => handleRoomChange(e.target.value)}
+                onFocus={() => setRoomSuggestionsOpen(true)}
                 placeholder="Кабинет, этаж или место"
                 maxLength={80}
+                autoComplete="off"
                 className={cn(
                   'w-full px-4 py-3 rounded-xl text-sm outline-none transition-all',
                   'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)]',
@@ -225,6 +275,27 @@ export default function CheckoutPage() {
                   roomError ? 'ring-2 ring-red-400' : 'focus:ring-2 focus:ring-[var(--tg-theme-button-color)]',
                 )}
               />
+
+              {/* Выпадающий список подсказок */}
+              {roomSuggestionsOpen && filteredSuggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-[var(--tg-theme-bg-color)] rounded-xl shadow-lg border border-[var(--tg-theme-secondary-bg-color)] overflow-hidden animate-fade-in max-h-48 overflow-y-auto">
+                  {filteredSuggestions.map((s) => (
+                    <button
+                      key={s}
+                      onMouseDown={(e) => { e.preventDefault(); handleRoomSelect(s) }}
+                      className={cn(
+                        'w-full text-left px-4 py-2.5 text-sm transition-colors',
+                        s === deliveryRoom
+                          ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]'
+                          : 'text-[var(--tg-theme-text-color)] hover:bg-[var(--tg-theme-secondary-bg-color)] active:bg-[var(--tg-theme-secondary-bg-color)]',
+                      )}
+                    >
+                      📍 {s}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               {roomError && (
                 <p className="text-xs text-red-500 mt-1.5 px-1 animate-fade-in">{roomError}</p>
               )}

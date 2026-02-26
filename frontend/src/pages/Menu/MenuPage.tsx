@@ -14,10 +14,11 @@ interface MenuCardProps {
   item: MenuItem
   cartQty: number
   onAdd: () => void
+  onRemove: () => void
   onClick: () => void
 }
 
-function MenuCard({ item, cartQty, onAdd, onClick }: MenuCardProps) {
+function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
   const { haptic } = useTelegram()
 
   function handleAdd(e: React.MouseEvent) {
@@ -26,21 +27,29 @@ function MenuCard({ item, cartQty, onAdd, onClick }: MenuCardProps) {
     onAdd()
   }
 
+  function handleRemove(e: React.MouseEvent) {
+    e.stopPropagation()
+    haptic.selectionChanged()
+    onRemove()
+  }
+
+  const emoji = item.isBusinessLunch ? '🍱'
+    : item.categorySlug === 'soups' ? '🍲'
+    : item.categorySlug === 'drinks' ? '☕'
+    : item.categorySlug === 'first-courses' ? '🥗'
+    : '🍽'
+
   return (
     <div
       onClick={onClick}
-      className="relative bg-[var(--tg-theme-secondary-bg-color)] rounded-2xl overflow-hidden active:scale-95 transition-transform cursor-pointer"
+      className="relative bg-[var(--tg-theme-secondary-bg-color)] rounded-2xl overflow-hidden active:scale-[0.97] transition-transform cursor-pointer select-none"
     >
       {/* Изображение */}
       <div className="aspect-square bg-gradient-to-br from-orange-100 to-orange-50 flex items-center justify-center">
         {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-5xl">
-            {item.isBusinessLunch ? '🍱' : item.categorySlug === 'soups' ? '🍲'
-              : item.categorySlug === 'drinks' ? '☕'
-              : item.categorySlug === 'first-courses' ? '🥗' : '🍽'}
-          </span>
+          <span className="text-5xl">{emoji}</span>
         )}
       </div>
 
@@ -49,21 +58,44 @@ function MenuCard({ item, cartQty, onAdd, onClick }: MenuCardProps) {
         <p className="text-sm font-medium text-[var(--tg-theme-text-color)] leading-snug line-clamp-2 min-h-[2.5rem]">
           {item.name}
         </p>
-        <div className="flex items-center justify-between mt-2">
-          <span className="text-sm font-bold text-[var(--tg-theme-text-color)]">
+        <div className="flex items-center justify-between mt-2 gap-1">
+          <span className="text-sm font-bold text-[var(--tg-theme-text-color)] shrink-0">
             {formatPrice(item.priceKopecks)}
           </span>
-          <button
-            onClick={handleAdd}
-            className={cn(
-              'flex items-center justify-center w-8 h-8 rounded-full text-lg font-bold transition-colors',
-              cartQty > 0
-                ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)]'
-                : 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] opacity-90',
-            )}
-          >
-            {cartQty > 0 ? cartQty : '+'}
-          </button>
+
+          {/* Инлайн-счётчик: + → [− qty +] */}
+          {cartQty === 0 ? (
+            <button
+              onClick={handleAdd}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-xl font-bold shrink-0 active:opacity-70 transition-opacity"
+              aria-label="Добавить"
+            >
+              +
+            </button>
+          ) : (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1"
+            >
+              <button
+                onClick={handleRemove}
+                className="w-7 h-7 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-base font-bold flex items-center justify-center active:opacity-70 transition-opacity"
+                aria-label="Убрать"
+              >
+                −
+              </button>
+              <span className="min-w-[1.25rem] text-center text-sm font-bold text-[var(--tg-theme-text-color)]">
+                {cartQty}
+              </span>
+              <button
+                onClick={handleAdd}
+                className="w-7 h-7 rounded-full bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] text-base font-bold flex items-center justify-center active:opacity-70 transition-opacity"
+                aria-label="Добавить ещё"
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -91,7 +123,7 @@ export default function MenuPage() {
   const [loadingItems, setLoadingItems] = useState(false)
   const tabsRef = useRef<HTMLDivElement>(null)
 
-  const { addItem, items: cartItems } = useCartStore()
+  const { addItem, removeItem, updateQuantity, items: cartItems } = useCartStore()
 
   // Шаг 1: загружаем меню, определяем стартовую вкладку
   useEffect(() => {
@@ -133,6 +165,15 @@ export default function MenuPage() {
       priceKopecks: item.priceKopecks,
       imageUrl: item.imageUrl,
     })
+  }
+
+  function handleRemoveFromCart(item: MenuItem) {
+    const qty = getCartQty(item.id)
+    if (qty <= 1) {
+      removeItem(item.id)
+    } else {
+      updateQuantity(item.id, qty - 1)
+    }
   }
 
   function getCartQty(itemId: number): number {
@@ -205,6 +246,7 @@ export default function MenuPage() {
                 item={item}
                 cartQty={getCartQty(item.id)}
                 onAdd={() => handleAddToCart(item)}
+                onRemove={() => handleRemoveFromCart(item)}
                 onClick={() => navigate(`/item/${item.id}`)}
               />
             ))}

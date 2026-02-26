@@ -5,7 +5,7 @@ import { useCartStore } from '@/store/cartStore'
 import { useBackButton } from '@/hooks/useBackButton'
 import { useMainButton } from '@/hooks/useMainButton'
 import { useTelegram } from '@/hooks/useTelegram'
-import { formatPrice } from '@/utils'
+import { formatPrice, cn } from '@/utils'
 import { FullScreenSpinner } from '@/components/Spinner'
 import Counter from '@/components/Counter'
 import type { MenuItem } from '@/types'
@@ -48,27 +48,29 @@ export default function ItemPage() {
   const isInCart = Boolean(cartItem)
   const total = item ? item.priceKopecks * quantity : 0
 
+  function handleAddToCart() {
+    if (!item) return
+    haptic.notificationOccurred('success')
+    if (isInCart) {
+      updateQuantity(item.id, quantity)
+    } else {
+      for (let i = 0; i < quantity; i++) {
+        addItem({
+          id: item.id,
+          name: item.name,
+          priceKopecks: item.priceKopecks,
+          imageUrl: item.imageUrl,
+        })
+      }
+    }
+    navigate(-1)
+  }
+
   useMainButton({
     text: isInCart
       ? `Обновить в корзине — ${formatPrice(total)}`
       : `Добавить в корзину — ${formatPrice(total)}`,
-    onClick: () => {
-      if (!item) return
-      haptic.notificationOccurred('success')
-      if (isInCart) {
-        updateQuantity(item.id, quantity)
-      } else {
-        for (let i = 0; i < quantity; i++) {
-          addItem({
-            id: item.id,
-            name: item.name,
-            priceKopecks: item.priceKopecks,
-            imageUrl: item.imageUrl,
-          })
-        }
-      }
-      navigate(-1)
-    },
+    onClick: handleAddToCart,
   })
 
   if (loading) return <FullScreenSpinner />
@@ -148,6 +150,26 @@ export default function ItemPage() {
             </span>
           </div>
         )}
+      </div>
+
+      {/* Нативная кнопка — резерв на случай если MainButton не показывается */}
+      <div className="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
+        <button
+          onClick={handleAddToCart}
+          disabled={!item.available}
+          className={cn(
+            'w-full py-3.5 rounded-2xl text-base font-semibold transition-opacity',
+            item.available
+              ? 'bg-[var(--tg-theme-button-color)] text-[var(--tg-theme-button-text-color)] active:opacity-80'
+              : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-hint-color)] cursor-not-allowed',
+          )}
+        >
+          {!item.available
+            ? 'Недоступно'
+            : isInCart
+            ? `Обновить в корзине — ${formatPrice(total)}`
+            : `Добавить в корзину — ${formatPrice(total)}`}
+        </button>
       </div>
     </div>
   )
