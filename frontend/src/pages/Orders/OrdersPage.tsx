@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchOrders } from '@/api/orders'
 import { formatPrice, formatDateTime, ACTIVE_ORDER_STATUSES } from '@/utils'
 import EmptyState from '@/components/EmptyState'
+import ErrorState from '@/components/ErrorState'
 import StatusBadge from '@/components/StatusBadge'
+import PullToRefresh from '@/components/PullToRefresh'
 import { OrdersSkeleton } from '@/components/Skeleton'
 import type { Order } from '@/types'
 
@@ -71,13 +73,24 @@ export default function OrdersPage() {
   const navigate = useNavigate()
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [tab, setTab] = useState<Tab>('active')
 
-  useEffect(() => {
-    fetchOrders()
-      .then(setOrders)
-      .finally(() => setLoading(false))
+  const loadOrders = useCallback(async () => {
+    try {
+      setError(false)
+      const data = await fetchOrders()
+      setOrders(data)
+    } catch {
+      setError(true)
+    } finally {
+      setLoading(false)
+    }
   }, [])
+
+  useEffect(() => {
+    loadOrders()
+  }, [loadOrders])
 
   const activeOrders = orders.filter((o) => ACTIVE_ORDER_STATUSES.includes(o.status))
   const historyOrders = orders.filter((o) => !ACTIVE_ORDER_STATUSES.includes(o.status))
@@ -106,8 +119,14 @@ export default function OrdersPage() {
       </header>
 
       {/* Контент */}
-      <div className="flex-1 px-4 py-4">
-        {loading ? (
+      <PullToRefresh onRefresh={loadOrders} className="flex-1 px-4 py-4">
+        {error ? (
+          <ErrorState
+            title="Ошибка"
+            description="Не удалось загрузить заказы"
+            onRetry={loadOrders}
+          />
+        ) : loading ? (
           <OrdersSkeleton />
         ) : shown.length === 0 ? (
           <div className="flex items-center justify-center pt-8">
@@ -139,12 +158,12 @@ export default function OrdersPage() {
               <OrderCard
                 key={order.id}
                 order={order}
-                onClick={() => navigate(`/order-success/${order.id}`)}
+                onClick={() => navigate(`/orders/${order.id}`)}
               />
             ))}
           </div>
         )}
-      </div>
+      </PullToRefresh>
     </div>
   )
 }

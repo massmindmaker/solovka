@@ -2,9 +2,11 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { fetchOrder } from '@/api/orders'
 import { useMainButton } from '@/hooks/useMainButton'
+import { useBackButton } from '@/hooks/useBackButton'
 import { useTelegram } from '@/hooks/useTelegram'
-import { formatPrice, cn } from '@/utils'
+import { formatPrice, formatDateTime, cn } from '@/utils'
 import { FullScreenSpinner } from '@/components/Spinner'
+import ErrorState from '@/components/ErrorState'
 import type { Order, OrderStatus } from '@/types'
 
 // ─── Шаги статуса (pipeline) ─────────────────────────────
@@ -112,33 +114,38 @@ function OrderItemRow({ name, quantity, priceKopecks }: {
 const POLL_INTERVAL_MS = 12000 // обновлять статус каждые 12 сек
 const FINAL_STATUSES: OrderStatus[] = ['delivered', 'cancelled']
 
-export default function OrderSuccessPage() {
+export default function OrderSuccessPage({ mode = 'success' }: { mode?: 'success' | 'detail' }) {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
   const { haptic } = useTelegram()
+  const isDetail = mode === 'detail'
 
   // Получаем заказ из nav state (от CheckoutPage) или загружаем по API
   const [order, setOrder] = useState<Order | null>(
     (location.state as { order?: Order })?.order ?? null
   )
   const [loading, setLoading] = useState(!order)
+  const [error, setError] = useState(false)
   const prevStatusRef = useRef<OrderStatus | null>(order?.status ?? null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Back button для detail-режима
+  useBackButton(isDetail)
 
   // Первичная загрузка если нет в state
   useEffect(() => {
     if (!id) return
     if (order) {
-      haptic.notificationOccurred('success')
+      if (!isDetail) haptic.notificationOccurred('success')
       return
     }
     fetchOrder(Number(id))
       .then((data) => {
         setOrder(data)
-        haptic.notificationOccurred('success')
+        if (!isDetail) haptic.notificationOccurred('success')
       })
-      .catch(() => navigate('/', { replace: true }))
+      .catch(() => setError(true))
       .finally(() => setLoading(false))
   }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -174,9 +181,26 @@ export default function OrderSuccessPage() {
   useMainButton({
     text: 'Вернуться в меню',
     onClick: () => navigate('/', { replace: true }),
+    visible: !isDetail,
   })
 
   if (loading) return <FullScreenSpinner />
+  if (error) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <ErrorState
+        title="Заказ не найден"
+        description="Не удалось загрузить информацию о заказе"
+        onRetry={() => {
+          setError(false)
+          setLoading(true)
+          fetchOrder(Number(id))
+            .then(setOrder)
+            .catch(() => setError(true))
+            .finally(() => setLoading(false))
+        }}
+      />
+    </div>
+  )
   if (!order) return null
 
   const isActive = !FINAL_STATUSES.includes(order.status)
@@ -201,10 +225,14 @@ export default function OrderSuccessPage() {
             ? 'Заказ доставлен!'
             : order.status === 'cancelled'
               ? 'Заказ отменён'
-              : 'Заказ принят!'}
+              : isDetail
+                ? `Заказ №${order.id}`
+                : 'Заказ принят!'}
         </h1>
         <p className="text-sm text-[var(--tg-theme-hint-color)] mt-1">
-          Заказ №{order.id}
+          {isDetail
+            ? formatDateTime(order.createdAt)
+            : `Заказ №${order.id}`}
         </p>
         {isActive && (
           <p className="text-xs text-[var(--tg-theme-hint-color)] mt-1">
@@ -277,16 +305,18 @@ export default function OrderSuccessPage() {
 
       </div>
 
-      {/* Нативная кнопка «В меню» — sticky внизу */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pt-3 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]"
-           style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-        <button
-          onClick={() => navigate('/', { replace: true })}
-          className="w-full py-4 rounded-2xl text-base font-bold bg-emerald-500 text-white active:bg-emerald-600 transition-colors"
-        >
-          Вернуться в меню
-        </button>
-      </div>
+      {/* Нативная кнопка «В меню» — sticky внизу (только в success-режиме) */}
+      {!isDetail && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pt-3 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]"
+             style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+          <button
+            onClick={() => navigate('/', { replace: true })}
+            className="w-full py-4 rounded-2xl text-base font-bold bg-emerald-500 text-white active:bg-emerald-600 transition-colors"
+          >
+            Вернуться в меню
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { fetchMenuItems, fetchMenu } from '@/api/menu'
+import { fetchMenuItems, fetchMenu, clearMenuCache } from '@/api/menu'
 import { useCartStore } from '@/store/cartStore'
 import { formatPrice, cn } from '@/utils'
 import { useTelegram } from '@/hooks/useTelegram'
 import { MenuSkeleton } from '@/components/Skeleton'
 import EmptyState from '@/components/EmptyState'
+import ErrorState from '@/components/ErrorState'
+import PullToRefresh from '@/components/PullToRefresh'
 import type { Category, MenuItem } from '@/types'
 
 // ─── Карточка блюда ──────────────────────────────────────
@@ -115,17 +117,19 @@ export default function MenuPage() {
   const [activeSlug, setActiveSlug] = useState<string | null>(null)
   const [loadingCats, setLoadingCats] = useState(true)
   const [loadingItems, setLoadingItems] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
 
   const { addItem, removeItem, updateQuantity, items: cartItems } = useCartStore()
 
-  // Шаг 1: загружаем меню, определяем стартовую вкладку
-  // Скрываем пустые категории из табов (daily без айтемов, пустые категории)
-  useEffect(() => {
-    fetchMenu().then(({ categories: cats, items: allItems, dailyItemIds }) => {
+  // Загрузка меню (переиспользуется для первой загрузки и refresh)
+  const loadMenu = useCallback(async (forceRefresh = false) => {
+    try {
+      setError(null)
+      if (forceRefresh) clearMenuCache()
+      const { categories: cats, items: allItems, dailyItemIds } = await fetchMenu()
       const dailyHasItems = dailyItemIds.length > 0
 
-      // Фильтруем: оставляем только категории с товарами
       const visibleCats = cats.filter((c) => {
         if (c.slug === 'daily') return dailyHasItems
         return allItems.some((i) => i.categorySlug === c.slug)
@@ -133,11 +137,23 @@ export default function MenuPage() {
 
       setCategories(visibleCats)
 
-      // Стартовая вкладка — первая непустая
       const first = visibleCats[0]
-      setActiveSlug(first?.slug ?? 'daily')
-    }).finally(() => setLoadingCats(false))
+      setActiveSlug((prev) => {
+        // Сохраняем текущий таб при refresh, если он всё ещё существует
+        if (prev && visibleCats.some((c) => c.slug === prev)) return prev
+        return first?.slug ?? 'daily'
+      })
+    } catch {
+      setError('Не удалось загрузить меню')
+    } finally {
+      setLoadingCats(false)
+    }
   }, [])
+
+  // Шаг 1: загружаем меню, определяем стартовую вкладку
+  useEffect(() => {
+    loadMenu()
+  }, [loadMenu])
 
   // Шаг 2: загружаем айтемы только когда activeSlug известен
   useEffect(() => {
@@ -145,8 +161,19 @@ export default function MenuPage() {
     setLoadingItems(true)
     fetchMenuItems(activeSlug)
       .then(setItems)
+      .catch(() => setError('Не удалось загрузить блюда'))
       .finally(() => setLoadingItems(false))
   }, [activeSlug])
+
+  // Pull-to-refresh handler
+  const handleRefresh = useCallback(async () => {
+    haptic.impactOccurred('medium')
+    await loadMenu(true)
+    if (activeSlug) {
+      const freshItems = await fetchMenuItems(activeSlug)
+      setItems(freshItems)
+    }
+  }, [haptic, loadMenu, activeSlug])
 
   function handleTabChange(slug: string) {
     haptic.selectionChanged()
@@ -225,8 +252,14 @@ export default function MenuPage() {
       </header>
 
       {/* Контент */}
-      <div className="flex-1 px-4 pb-4 overflow-y-auto">
-        {(loadingItems || !activeSlug) ? (
+      <PullToRefresh onRefresh={handleRefresh} className="flex-1 px-4 pb-4">
+        {error ? (
+          <ErrorState
+            title="Ошибка"
+            description={error}
+            onRetry={() => loadMenu(true)}
+          />
+        ) : (loadingItems || !activeSlug) ? (
           <MenuSkeleton />
         ) : items.length === 0 ? (
           <EmptyState
@@ -248,7 +281,7 @@ export default function MenuPage() {
             ))}
           </div>
         )}
-      </div>
+      </PullToRefresh>
     </div>
   )
 }
