@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { fetchOrder } from '@/api/orders'
 import { useMainButton } from '@/hooks/useMainButton'
 import { useBackButton } from '@/hooks/useBackButton'
+import { useRepeatOrder } from '@/hooks/useRepeatOrder'
 import { useTelegram } from '@/hooks/useTelegram'
 import { formatPrice, formatDateTime, cn } from '@/utils'
 import { FullScreenSpinner } from '@/components/Spinner'
@@ -120,6 +121,8 @@ export default function OrderSuccessPage({ mode = 'success' }: { mode?: 'success
   const location = useLocation()
   const { haptic } = useTelegram()
   const isDetail = mode === 'detail'
+  const { repeatOrder, loading: repeatLoading } = useRepeatOrder()
+  const [repeatError, setRepeatError] = useState<string | null>(null)
 
   // Получаем заказ из nav state (от CheckoutPage) или загружаем по API
   const [order, setOrder] = useState<Order | null>(
@@ -302,6 +305,33 @@ export default function OrderSuccessPage({ mode = 'success' }: { mode?: 'success
             </span>
           </div>
         </div>
+
+        {/* Кнопка "Повторить заказ" — только в detail-режиме для завершённых */}
+        {isDetail && FINAL_STATUSES.includes(order.status) && (
+          <div className="space-y-2">
+            {repeatError && (
+              <div className="bg-red-50 text-red-600 text-sm font-medium px-4 py-3 rounded-xl">
+                {repeatError}
+              </div>
+            )}
+            <button
+              onClick={async () => {
+                setRepeatError(null)
+                const result = await repeatOrder(order)
+                if (!result.success && result.message) {
+                  setRepeatError(result.message)
+                }
+              }}
+              disabled={repeatLoading}
+              className="w-full flex items-center justify-center gap-2.5 py-4 rounded-2xl bg-emerald-500 text-white text-base font-bold active:bg-emerald-600 transition-colors disabled:opacity-50 shadow-lg shadow-emerald-500/25"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {repeatLoading ? 'Загрузка...' : 'Повторить заказ'}
+            </button>
+          </div>
+        )}
 
       </div>
 

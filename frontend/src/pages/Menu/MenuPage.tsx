@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { fetchMenuItems, fetchMenu, clearMenuCache } from '@/api/menu'
 import { useCartStore } from '@/store/cartStore'
+import { useFavoritesStore } from '@/store/favoritesStore'
 import { formatPrice, cn } from '@/utils'
 import { useTelegram } from '@/hooks/useTelegram'
 import { MenuSkeleton } from '@/components/Skeleton'
@@ -15,12 +16,14 @@ import type { Category, MenuItem } from '@/types'
 interface MenuCardProps {
   item: MenuItem
   cartQty: number
+  isFavorite: boolean
   onAdd: () => void
   onRemove: () => void
+  onToggleFavorite: () => void
   onClick: () => void
 }
 
-function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
+function MenuCard({ item, cartQty, isFavorite, onAdd, onRemove, onToggleFavorite, onClick }: MenuCardProps) {
   const { haptic } = useTelegram()
 
   function handleAdd(e: React.MouseEvent) {
@@ -33,6 +36,12 @@ function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
     e.stopPropagation()
     haptic.selectionChanged()
     onRemove()
+  }
+
+  function handleFavorite(e: React.MouseEvent) {
+    e.stopPropagation()
+    haptic.impactOccurred('light')
+    onToggleFavorite()
   }
 
   const emoji = item.isBusinessLunch ? '🍱'
@@ -54,6 +63,17 @@ function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
           <span className="text-5xl">{emoji}</span>
         )}
       </div>
+
+      {/* Кнопка избранного */}
+      <button
+        onClick={handleFavorite}
+        className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 backdrop-blur-sm shadow-sm active:scale-90 transition-transform"
+        aria-label={isFavorite ? 'Убрать из избранного' : 'В избранное'}
+      >
+        <svg className="w-4.5 h-4.5" viewBox="0 0 24 24" fill={isFavorite ? '#ef4444' : 'none'} stroke={isFavorite ? '#ef4444' : '#9ca3af'} strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
+        </svg>
+      </button>
 
       {/* Контент */}
       <div className="p-3 flex flex-col gap-2.5">
@@ -128,6 +148,7 @@ export default function MenuPage() {
   const tabsRef = useRef<HTMLDivElement>(null)
 
   const { addItem, removeItem, updateQuantity, items: cartItems } = useCartStore()
+  const { ids: favoriteIds, toggle: toggleFavorite } = useFavoritesStore()
 
   const loadMenu = useCallback(async (forceRefresh = false) => {
     try {
@@ -161,12 +182,25 @@ export default function MenuPage() {
 
   useEffect(() => {
     if (!activeSlug) return
+    if (activeSlug === 'favorites') {
+      if (favoriteIds.length === 0) {
+        setItems([])
+        setLoadingItems(false)
+        return
+      }
+      setLoadingItems(true)
+      fetchMenuItems('all')
+        .then((all) => setItems(all.filter((i) => favoriteIds.includes(i.id))))
+        .catch(() => setError('Не удалось загрузить блюда'))
+        .finally(() => setLoadingItems(false))
+      return
+    }
     setLoadingItems(true)
     fetchMenuItems(activeSlug)
       .then(setItems)
       .catch(() => setError('Не удалось загрузить блюда'))
       .finally(() => setLoadingItems(false))
-  }, [activeSlug])
+  }, [activeSlug, favoriteIds])
 
   const handleRefresh = useCallback(async () => {
     haptic.impactOccurred('medium')
@@ -240,6 +274,22 @@ export default function MenuPage() {
             ref={tabsRef}
             className="flex gap-2 px-4 pb-3 overflow-x-auto scrollbar-none"
           >
+            {/* Таб "Избранное" — показываем, если есть избранные */}
+            {favoriteIds.length > 0 && (
+              <button
+                data-slug="favorites"
+                onClick={() => handleTabChange('favorites')}
+                className={cn(
+                  'flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm transition-all whitespace-nowrap',
+                  activeSlug === 'favorites'
+                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30'
+                    : 'bg-gray-100 text-gray-700 font-medium active:bg-gray-200',
+                )}
+              >
+                <span>❤️</span>
+                <span>Избранное</span>
+              </button>
+            )}
             {categories.map((cat) => (
               <button
                 key={cat.slug}
@@ -270,6 +320,12 @@ export default function MenuPage() {
           />
         ) : (loadingItems || !activeSlug) ? (
           <MenuSkeleton />
+        ) : items.length === 0 && activeSlug === 'favorites' ? (
+          <EmptyState
+            icon="❤️"
+            title="Нет избранного"
+            description="Нажмите на сердечко, чтобы добавить блюдо в избранное"
+          />
         ) : items.length === 0 ? (
           <EmptyState
             icon="🍳"
@@ -283,8 +339,10 @@ export default function MenuPage() {
                 key={item.id}
                 item={item}
                 cartQty={getCartQty(item.id)}
+                isFavorite={favoriteIds.includes(item.id)}
                 onAdd={() => handleAddToCart(item)}
                 onRemove={() => handleRemoveFromCart(item)}
+                onToggleFavorite={() => toggleFavorite(item.id)}
                 onClick={() => navigate(`/item/${item.id}`)}
               />
             ))}
