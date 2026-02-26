@@ -395,7 +395,7 @@ export default function CheckoutPage() {
       </div>
 
       {/* Нативная кнопка «Оплатить» — sticky внизу */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pt-3 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]"
+      <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pt-3 bg-white shadow-[0_-2px_10px_rgba(0,0,0,0.08)]"
            style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
         <button
           onClick={handleSubmit}
@@ -404,7 +404,7 @@ export default function CheckoutPage() {
             'w-full py-4 rounded-2xl text-base font-bold transition-all',
             submitting
               ? 'bg-gray-300 text-gray-500 cursor-wait'
-              : 'bg-emerald-500 text-white active:bg-emerald-600',
+              : 'bg-emerald-500 text-white active:bg-emerald-600 shadow-lg shadow-emerald-500/25',
           )}
         >
           {submitting ? 'Оформляем...' : `Оплатить — ${formatPrice(total)}`}

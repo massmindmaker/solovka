@@ -10,7 +10,7 @@ const NAV_ITEMS = [
 ]
 
 // Страницы, на которых BottomNav скрыт
-const HIDDEN_PATTERNS = ['/item/', '/checkout', '/order-success/', '/orders/']
+const HIDDEN_PATTERNS = ['/item/', '/cart', '/checkout', '/order-success/', '/orders/']
 
 export default function BottomNav() {
   const totalCount = useCartStore((s) => s.totalCount())

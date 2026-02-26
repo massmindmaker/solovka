@@ -16,7 +16,7 @@ import ProfilePage from '@/pages/Profile/ProfilePage'
 import TalonsPage from '@/pages/Talons/TalonsPage'
 
 // Страницы без BottomNav — не нужен нижний паддинг
-const NO_NAV_PATTERNS = ['/item/', '/checkout', '/order-success/', '/orders/']
+const NO_NAV_PATTERNS = ['/item/', '/cart', '/checkout', '/order-success/', '/orders/']
 
 function AppContent() {
   const { tg } = useTelegram()

@@ -3,7 +3,7 @@ import { useCartStore } from '@/store/cartStore'
 import { useBackButton } from '@/hooks/useBackButton'
 import { useMainButton } from '@/hooks/useMainButton'
 import { useTelegram } from '@/hooks/useTelegram'
-import { formatPrice, plural } from '@/utils'
+import { formatPrice, plural, cn } from '@/utils'
 import EmptyState from '@/components/EmptyState'
 import Counter from '@/components/Counter'
 import type { CartItem } from '@/types'
@@ -170,7 +170,7 @@ export default function CartPage() {
       </header>
 
       {/* Список позиций */}
-      <div className="flex-1 px-4 pb-4">
+      <div className="flex-1 px-4 pb-40">
         {items.map((item) => (
           <CartRow
             key={item.id}
@@ -181,31 +181,17 @@ export default function CartPage() {
         ))}
       </div>
 
-      {/* Итоговый блок */}
-      <div className="sticky bottom-16 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)] px-4 pt-4 pb-5 space-y-2">
+      {/* Итоговый блок + CTA */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200 px-4 pt-3"
+           style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
 
-        {/* Разбивка позиций */}
-        <div className="space-y-1.5">
-          {items.map((item) => (
-            <div key={item.id} className="flex justify-between text-sm">
-              <span className="text-[var(--tg-theme-hint-color)] truncate mr-2 flex-1">
-                {item.name}
-                {item.quantity > 1 && (
-                  <span className="font-medium"> × {item.quantity}</span>
-                )}
-              </span>
-              <span className="text-[var(--tg-theme-text-color)] font-medium whitespace-nowrap">
-                {formatPrice(item.priceKopecks * item.quantity)}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        {/* Разделитель */}
-        <div className="border-t border-dashed border-[var(--tg-theme-secondary-bg-color)] pt-2 mt-2">
-          <div className="flex justify-between items-center">
-            <span className="text-base font-bold text-[var(--tg-theme-text-color)]">Итого</span>
-            <span className="text-xl font-bold text-emerald-600">
+        {/* Итого */}
+        <div className="flex justify-between items-center mb-3">
+          <div>
+            <span className="text-sm text-gray-500">{uniqueCount} {positionLabel}</span>
+          </div>
+          <div className="text-right">
+            <span className="text-xl font-bold text-gray-900">
               {formatPrice(total)}
             </span>
           </div>
@@ -213,13 +199,29 @@ export default function CartPage() {
 
         {/* Предупреждение о минимальной сумме */}
         {belowMin && (
-          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 animate-fade-in">
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 mb-3 animate-fade-in">
             <span className="text-amber-500 text-sm">⚠️</span>
             <p className="text-xs text-amber-700 font-medium">
               Минимальная сумма заказа — {formatPrice(MIN_ORDER_KOPECKS)}
             </p>
           </div>
         )}
+
+        {/* Кнопка "Оформить заказ" */}
+        <button
+          onClick={() => navigate('/checkout')}
+          disabled={belowMin}
+          className={cn(
+            'w-full py-4 rounded-2xl text-base font-bold transition-all',
+            belowMin
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              : 'bg-emerald-500 text-white active:bg-emerald-600 shadow-lg shadow-emerald-500/25',
+          )}
+        >
+          {belowMin
+            ? `Минимум ${formatPrice(MIN_ORDER_KOPECKS)}`
+            : `Оформить заказ — ${formatPrice(total)}`}
+        </button>
       </div>
     </div>
   )

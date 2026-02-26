@@ -220,10 +220,16 @@ export default function MenuPage() {
           {totalCount > 0 && (
             <button
               onClick={() => navigate('/cart')}
-              className="flex items-center gap-2 bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-bold active:bg-emerald-600 transition-colors animate-fade-in shadow-md shadow-emerald-500/25"
+              className="relative flex items-center gap-2 bg-emerald-500 text-white pl-4 pr-5 py-2.5 rounded-full text-sm font-bold active:bg-emerald-600 transition-colors animate-bounce-in shadow-lg shadow-emerald-500/30"
             >
-              <span>🛒</span>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z" />
+              </svg>
               <span>{formatPrice(totalKopecks)}</span>
+              {/* Бейдж количества */}
+              <span className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white shadow-sm">
+                {totalCount > 99 ? '99+' : totalCount}
+              </span>
             </button>
           )}
         </div>
@@ -240,10 +246,10 @@ export default function MenuPage() {
                 data-slug={cat.slug}
                 onClick={() => handleTabChange(cat.slug)}
                 className={cn(
-                  'flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap',
+                  'flex-shrink-0 flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm transition-all whitespace-nowrap',
                   activeSlug === cat.slug
-                    ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
-                    : 'bg-gray-100 text-gray-600 active:bg-gray-200',
+                    ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-600/30'
+                    : 'bg-gray-100 text-gray-700 font-medium active:bg-gray-200',
                 )}
               >
                 <span>{cat.icon}</span>

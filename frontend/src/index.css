@@ -1,5 +1,51 @@
 @import "tailwindcss";
 
+/* ── Tailwind v4: override oklch() → hex для совместимости с WebView ─── */
+@theme {
+  /* emerald */
+  --color-emerald-50: #ecfdf5;
+  --color-emerald-100: #d1fae5;
+  --color-emerald-200: #a7f3d0;
+  --color-emerald-300: #6ee7b7;
+  --color-emerald-400: #34d399;
+  --color-emerald-500: #10b981;
+  --color-emerald-600: #059669;
+  --color-emerald-700: #047857;
+
+  /* gray */
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+
+  /* red */
+  --color-red-50: #fef2f2;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+
+  /* amber/orange/yellow/green/blue (used in UI) */
+  --color-amber-50: #fffbeb;
+  --color-amber-200: #fde68a;
+  --color-amber-500: #f59e0b;
+  --color-amber-700: #b45309;
+  --color-orange-50: #fff7ed;
+  --color-orange-100: #ffedd5;
+  --color-orange-400: #fb923c;
+  --color-orange-500: #f97316;
+  --color-yellow-600: #ca8a04;
+  --color-green-50: #f0fdf4;
+  --color-green-100: #dcfce7;
+  --color-green-500: #22c55e;
+  --color-green-600: #16a34a;
+  --color-blue-100: #dbeafe;
+}
+
 /* Telegram CSS-переменные с фоллбэками для браузера */
 :root {
   --tg-theme-bg-color: #ffffff;
