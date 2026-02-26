@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
-import { getDb } from './lib/db'
-import { requireAuth } from './lib/auth'
-import { upsertUser } from './lib/userHelper'
-import { notifyUser, notifyAdmin, formatOrderNotification } from './lib/bot'
+import { getDb } from '../lib/db'
+import { requireAuth } from '../lib/auth'
+import { upsertUser } from '../lib/userHelper'
+import { notifyUser, notifyAdmin, formatOrderNotification } from '../lib/bot'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const auth = requireAuth(req, res)
