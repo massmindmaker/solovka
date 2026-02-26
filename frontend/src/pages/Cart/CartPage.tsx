@@ -34,10 +34,10 @@ function CartRow({ item, onRemove, onQuantityChange }: CartRowProps) {
 
       {/* Название + цена за 1 шт */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[var(--tg-theme-text-color)] leading-snug line-clamp-2">
+        <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2">
           {item.name}
         </p>
-        <p className="text-xs text-[var(--tg-theme-hint-color)] mt-0.5">
+        <p className="text-xs text-gray-500 mt-0.5">
           {formatPrice(item.priceKopecks)} / шт.
         </p>
         <p className="text-sm font-bold text-emerald-600 mt-1">
@@ -113,7 +113,7 @@ export default function CartPage() {
     return (
       <div className="flex flex-col h-full min-h-screen">
         <header className="px-4 pt-4 pb-2">
-          <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Корзина</h1>
+          <h1 className="text-[28px] font-bold text-gray-900 tracking-tight">Корзина</h1>
         </header>
         <div className="flex-1 flex items-center justify-center">
           <EmptyState
@@ -154,7 +154,7 @@ export default function CartPage() {
               ←
             </button>
             <div>
-              <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Корзина</h1>
+          <h1 className="text-[28px] font-bold text-gray-900 tracking-tight">Корзина</h1>
               <p className="text-xs text-[var(--tg-theme-hint-color)] mt-0.5">
                 {uniqueCount} {positionLabel}
               </p>

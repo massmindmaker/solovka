@@ -20,11 +20,11 @@ function OrderCard({ order, onClick }: OrderCardProps) {
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-[var(--tg-theme-secondary-bg-color)] rounded-2xl p-4 space-y-3 active:scale-[0.98] transition-transform"
+      className="w-full text-left bg-white rounded-2xl p-4 space-y-3 shadow-[0_1px_4px_rgba(0,0,0,0.08)] active:scale-[0.98] transition-transform"
     >
       {/* Шапка: номер + статус */}
       <div className="flex items-center justify-between">
-        <span className="font-bold text-[var(--tg-theme-text-color)]">#{order.id}</span>
+        <span className="font-bold text-gray-900">#{order.id}</span>
         <StatusBadge status={order.status} />
       </div>
 
@@ -97,10 +97,10 @@ export default function OrdersPage() {
   const shown = tab === 'active' ? activeOrders : historyOrders
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-gray-50">
       {/* Шапка */}
-      <header className="sticky top-0 z-10 bg-[var(--tg-theme-bg-color)] px-4 pt-4 pb-0">
-        <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)] mb-3">Заказы</h1>
+      <header className="sticky top-0 z-10 bg-white px-4 pt-4 pb-0">
+        <h1 className="text-[28px] font-bold text-gray-900 tracking-tight mb-3">Заказы</h1>
 
         {/* Табы */}
         <div className="flex gap-1 bg-[var(--tg-theme-secondary-bg-color)] rounded-xl p-1">

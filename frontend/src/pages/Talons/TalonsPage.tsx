@@ -196,7 +196,7 @@ export default function TalonsPage() {
             ←
           </button>
           <div>
-            <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Талоны</h1>
+            <h1 className="text-[28px] font-bold text-gray-900 tracking-tight">Талоны</h1>
             <p className="text-sm text-[var(--tg-theme-hint-color)] mt-0.5">
               Предоплатите обеды и кофе по сниженной цене
             </p>

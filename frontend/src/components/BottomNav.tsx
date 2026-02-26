@@ -9,18 +9,17 @@ const NAV_ITEMS = [
   { to: '/profile', icon: '👤', label: 'Профиль', exact: false },
 ]
 
-// Страницы, на которых BottomNav скрыт (детали товара, чекаут, успех)
-const HIDDEN_PATTERNS = ['/item/', '/checkout', '/order-success/']
+// Страницы, на которых BottomNav скрыт
+const HIDDEN_PATTERNS = ['/item/', '/checkout', '/order-success/', '/orders/']
 
 export default function BottomNav() {
   const totalCount = useCartStore((s) => s.totalCount())
   const { pathname } = useLocation()
 
-  // Скрываем навигацию на страницах с полноэкранными CTA-кнопками
   if (HIDDEN_PATTERNS.some((p) => pathname.startsWith(p))) return null
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--tg-theme-bg-color)] border-t border-[var(--tg-theme-secondary-bg-color)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-gray-200">
       <div className="flex items-stretch h-16 pb-[env(safe-area-inset-bottom)]">
         {NAV_ITEMS.map(({ to, icon, label, exact }) => (
           <NavLink
@@ -29,10 +28,10 @@ export default function BottomNav() {
             end={exact}
             className={({ isActive }) =>
               cn(
-                'flex flex-1 flex-col items-center justify-center gap-0.5 text-xs transition-colors',
+                'flex flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors',
                 isActive
                   ? 'text-emerald-600'
-                  : 'text-[var(--tg-theme-hint-color)]',
+                  : 'text-gray-400',
               )
             }
           >
@@ -40,7 +39,7 @@ export default function BottomNav() {
               <span className="text-2xl leading-none">{icon}</span>
               {to === '/cart' && totalCount > 0 && (
                 <span className="absolute -top-1.5 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white animate-bounce-in"
-                      key={totalCount} /* re-mount triggers bounce on count change */
+                      key={totalCount}
                 >
                   {totalCount > 99 ? '99+' : totalCount}
                 </span>

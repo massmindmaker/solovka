@@ -114,7 +114,7 @@ export default function ItemPage() {
 
       {/* Детали */}
       <div className="flex-1 bg-[var(--tg-theme-bg-color)] rounded-t-3xl -mt-4 px-5 pt-6 pb-28">
-        <h1 className="text-2xl font-bold text-[var(--tg-theme-text-color)] leading-tight">
+        <h1 className="text-[28px] font-bold text-gray-900 leading-tight tracking-tight">
           {item.name}
         </h1>
 

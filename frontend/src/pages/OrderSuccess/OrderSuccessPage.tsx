@@ -220,7 +220,7 @@ export default function OrderSuccessPage({ mode = 'success' }: { mode?: 'success
         )}>
           {order.status === 'delivered' ? '🎉' : order.status === 'cancelled' ? '❌' : '✅'}
         </div>
-        <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">
+        <h1 className="text-[28px] font-bold text-gray-900 tracking-tight">
           {order.status === 'delivered'
             ? 'Заказ доставлен!'
             : order.status === 'cancelled'
@@ -229,7 +229,7 @@ export default function OrderSuccessPage({ mode = 'success' }: { mode?: 'success
                 ? `Заказ №${order.id}`
                 : 'Заказ принят!'}
         </h1>
-        <p className="text-sm text-[var(--tg-theme-hint-color)] mt-1">
+        <p className="text-sm text-gray-500 mt-1">
           {isDetail
             ? formatDateTime(order.createdAt)
             : `Заказ №${order.id}`}

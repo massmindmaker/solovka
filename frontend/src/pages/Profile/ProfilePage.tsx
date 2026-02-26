@@ -82,7 +82,7 @@ export default function ProfilePage() {
   if (!profile) return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 pt-4 pb-3">
-        <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Профиль</h1>
+        <h1 className="text-[28px] font-bold text-gray-900 tracking-tight">Профиль</h1>
       </header>
       <ProfileSkeleton />
     </div>
@@ -129,7 +129,7 @@ export default function ProfilePage() {
     <div className="flex flex-col min-h-screen">
       {/* Шапка */}
       <header className="px-4 pt-4 pb-3">
-        <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Профиль</h1>
+        <h1 className="text-[28px] font-bold text-gray-900 tracking-tight">Профиль</h1>
       </header>
 
       <div className="flex-1 px-4 pb-6 space-y-6 animate-fade-in">

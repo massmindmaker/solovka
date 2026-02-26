@@ -44,10 +44,10 @@ function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
   return (
     <div
       onClick={onClick}
-      className="relative bg-[var(--tg-theme-secondary-bg-color)] rounded-2xl overflow-hidden active:scale-[0.97] transition-transform cursor-pointer select-none"
+      className="relative bg-white rounded-2xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.08)] active:scale-[0.97] transition-transform cursor-pointer select-none"
     >
-      {/* Изображение */}
-      <div className="aspect-[4/3] bg-gradient-to-br from-amber-50 to-orange-50 flex items-center justify-center">
+      {/* Изображение — 3:2 по скиллу */}
+      <div className="aspect-[3/2] bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
         {item.imageUrl ? (
           <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
         ) : (
@@ -56,16 +56,24 @@ function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
       </div>
 
       {/* Контент */}
-      <div className="p-3 flex flex-col gap-2">
-        <p className="text-sm font-medium text-[var(--tg-theme-text-color)] leading-snug line-clamp-2 min-h-[2.5rem]">
+      <div className="p-3 flex flex-col gap-2.5">
+        {/* Название — тёмный, контрастный текст */}
+        <p className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 min-h-[2.5rem]">
           {item.name}
         </p>
 
-        {/* Кнопка добавления / счётчик — на всю ширину */}
+        {/* Описание (граммовка) */}
+        {item.description && (
+          <p className="text-xs font-medium text-gray-400 -mt-1">
+            {item.description}
+          </p>
+        )}
+
+        {/* CTA: кнопка с ценой / счётчик */}
         {cartQty === 0 ? (
           <button
             onClick={handleAdd}
-            className="w-full flex items-center justify-center gap-1 py-2.5 rounded-xl bg-emerald-500 text-white text-sm font-bold active:bg-emerald-600 transition-colors"
+            className="w-full flex items-center justify-center gap-1.5 py-3 rounded-xl bg-emerald-500 text-white text-sm font-bold active:bg-emerald-600 transition-colors"
           >
             {formatPrice(item.priceKopecks)}
           </button>
@@ -76,17 +84,17 @@ function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
           >
             <button
               onClick={handleRemove}
-              className="flex items-center justify-center w-10 py-2.5 text-white text-lg font-bold active:bg-emerald-600 transition-colors"
+              className="flex items-center justify-center w-11 h-11 text-white text-lg font-bold active:bg-emerald-600 transition-colors"
               aria-label="Убрать"
             >
               −
             </button>
-            <span className="text-sm font-bold text-white">
+            <span className="text-sm font-bold text-white animate-count-pop" key={cartQty}>
               {cartQty}
             </span>
             <button
               onClick={handleAdd}
-              className="flex items-center justify-center w-10 py-2.5 text-white text-lg font-bold active:bg-emerald-600 transition-colors"
+              className="flex items-center justify-center w-11 h-11 text-white text-lg font-bold active:bg-emerald-600 transition-colors"
               aria-label="Добавить ещё"
             >
               +
@@ -97,7 +105,7 @@ function MenuCard({ item, cartQty, onAdd, onRemove, onClick }: MenuCardProps) {
 
       {/* Бейдж "бизнес-ланч" */}
       {item.isBusinessLunch && (
-        <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+        <div className="absolute top-2 left-2 bg-orange-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
           Ланч
         </div>
       )}
@@ -113,7 +121,6 @@ export default function MenuPage() {
 
   const [categories, setCategories] = useState<Category[]>([])
   const [items, setItems] = useState<MenuItem[]>([])
-  // null = стартовая вкладка ещё не определена (ждём ответа API)
   const [activeSlug, setActiveSlug] = useState<string | null>(null)
   const [loadingCats, setLoadingCats] = useState(true)
   const [loadingItems, setLoadingItems] = useState(false)
@@ -122,7 +129,6 @@ export default function MenuPage() {
 
   const { addItem, removeItem, updateQuantity, items: cartItems } = useCartStore()
 
-  // Загрузка меню (переиспользуется для первой загрузки и refresh)
   const loadMenu = useCallback(async (forceRefresh = false) => {
     try {
       setError(null)
@@ -139,7 +145,6 @@ export default function MenuPage() {
 
       const first = visibleCats[0]
       setActiveSlug((prev) => {
-        // Сохраняем текущий таб при refresh, если он всё ещё существует
         if (prev && visibleCats.some((c) => c.slug === prev)) return prev
         return first?.slug ?? 'daily'
       })
@@ -150,12 +155,10 @@ export default function MenuPage() {
     }
   }, [])
 
-  // Шаг 1: загружаем меню, определяем стартовую вкладку
   useEffect(() => {
     loadMenu()
   }, [loadMenu])
 
-  // Шаг 2: загружаем айтемы только когда activeSlug известен
   useEffect(() => {
     if (!activeSlug) return
     setLoadingItems(true)
@@ -165,7 +168,6 @@ export default function MenuPage() {
       .finally(() => setLoadingItems(false))
   }, [activeSlug])
 
-  // Pull-to-refresh handler
   const handleRefresh = useCallback(async () => {
     haptic.impactOccurred('medium')
     await loadMenu(true)
@@ -178,7 +180,6 @@ export default function MenuPage() {
   function handleTabChange(slug: string) {
     haptic.selectionChanged()
     setActiveSlug(slug)
-    // Скроллим табы к активному
     const tabEl = tabsRef.current?.querySelector(`[data-slug="${slug}"]`)
     tabEl?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' })
   }
@@ -209,15 +210,17 @@ export default function MenuPage() {
   const totalKopecks = cartItems.reduce((s, i) => s + i.priceKopecks * i.quantity, 0)
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Шапка */}
-      <header className="sticky top-0 z-30 bg-[var(--tg-theme-bg-color)] pt-3 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-        <div className="px-4 pb-2 flex items-center justify-between">
-          <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">🍽 Столовая</h1>
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* ── Шапка ─────────────────────────────────────── */}
+      <header className="sticky top-0 z-30 bg-white pt-4 pb-0 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+        <div className="px-4 pb-3 flex items-center justify-between">
+          <h1 className="text-[28px] font-bold text-gray-900 tracking-tight">
+            Столовая
+          </h1>
           {totalCount > 0 && (
             <button
               onClick={() => navigate('/cart')}
-              className="flex items-center gap-2 bg-emerald-500 text-white px-3 py-1.5 rounded-full text-sm font-bold active:bg-emerald-600 transition-colors animate-fade-in"
+              className="flex items-center gap-2 bg-emerald-500 text-white px-4 py-2 rounded-full text-sm font-bold active:bg-emerald-600 transition-colors animate-fade-in shadow-md shadow-emerald-500/25"
             >
               <span>🛒</span>
               <span>{formatPrice(totalKopecks)}</span>
@@ -225,7 +228,7 @@ export default function MenuPage() {
           )}
         </div>
 
-        {/* Категории-табы */}
+        {/* ── Категории-табы ──────────────────────────── */}
         {!loadingCats && (
           <div
             ref={tabsRef}
@@ -237,10 +240,10 @@ export default function MenuPage() {
                 data-slug={cat.slug}
                 onClick={() => handleTabChange(cat.slug)}
                 className={cn(
-                  'flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap',
+                  'flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap',
                   activeSlug === cat.slug
-                    ? 'bg-emerald-500 text-white'
-                    : 'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)]',
+                    ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/25'
+                    : 'bg-gray-100 text-gray-600 active:bg-gray-200',
                 )}
               >
                 <span>{cat.icon}</span>
@@ -251,8 +254,8 @@ export default function MenuPage() {
         )}
       </header>
 
-      {/* Контент */}
-      <PullToRefresh onRefresh={handleRefresh} className="flex-1 px-4 pb-4">
+      {/* ── Контент ───────────────────────────────────── */}
+      <PullToRefresh onRefresh={handleRefresh} className="flex-1 px-4 pt-3 pb-4">
         {error ? (
           <ErrorState
             title="Ошибка"

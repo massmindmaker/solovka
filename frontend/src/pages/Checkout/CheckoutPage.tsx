@@ -230,7 +230,7 @@ export default function CheckoutPage() {
           >
             ←
           </button>
-          <h1 className="text-[22px] font-bold text-[var(--tg-theme-text-color)]">Оформление заказа</h1>
+          <h1 className="text-[22px] font-bold text-gray-900">Оформление заказа</h1>
         </div>
       </header>
 
