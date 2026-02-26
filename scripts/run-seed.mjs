@@ -1,12 +1,7 @@
 // One-time script: apply seed_ogromov.sql to Neon DB
-// Run: node scripts/run-seed.mjs
+// Run: DATABASE_URL=... node scripts/run-seed.mjs
 
 import { neon } from '@neondatabase/serverless'
-import { readFileSync } from 'fs'
-import { fileURLToPath } from 'url'
-import { dirname, join } from 'path'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const DATABASE_URL = process.env.DATABASE_URL
 if (!DATABASE_URL) {
@@ -58,43 +53,43 @@ async function run() {
   await sql`ALTER SEQUENCE menu_items_id_seq RESTART WITH 1`
   console.log('  ✓ Cleared')
 
-  // Step 4: Insert real Огромнов menu
-  console.log('\n[4/5] Inserting real Огромнов menu (23 items)...')
+  // Step 4: Insert real Огромнов menu (with image_url!)
+  console.log('\n[4/5] Inserting real Огромнов menu (23 items with photos)...')
   const items = [
     // Холодные закуски
-    { slug: 'cold-snacks', name: 'Салат ОЛИВЬЕ ПО-ДОМАШНЕМУ с ветчиной',    desc: '120 гр',               price: 12000 },
-    { slug: 'cold-snacks', name: 'Салат ГРЕЧЕСКИЙ',                          desc: '120 гр',               price: 25000 },
-    { slug: 'cold-snacks', name: 'Салат из свёклы с черносливом и майонезом',desc: '120 гр',               price: 12000 },
-    { slug: 'cold-snacks', name: 'Винегрет овощной',                         desc: '120 гр',               price: 12000 },
+    { slug: 'cold-snacks', name: 'Салат ОЛИВЬЕ ПО-ДОМАШНЕМУ с ветчиной',     desc: '120 гр',               price: 12000, img: 'https://images.unsplash.com/photo-1551248429-40975aa4de74?w=400&h=300&fit=crop' },
+    { slug: 'cold-snacks', name: 'Салат ГРЕЧЕСКИЙ',                           desc: '120 гр',               price: 25000, img: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop' },
+    { slug: 'cold-snacks', name: 'Салат из свёклы с черносливом и майонезом',  desc: '120 гр',               price: 12000, img: 'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?w=400&h=300&fit=crop' },
+    { slug: 'cold-snacks', name: 'Винегрет овощной',                          desc: '120 гр',               price: 12000, img: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=300&fit=crop' },
     // Первые блюда (супы)
-    { slug: 'first-courses', name: 'Суп из ОВОЩЕЙ с курицей и сметаной',                desc: '300 гр',              price: 35000 },
-    { slug: 'first-courses', name: 'СУП-ХАРЧО с говядиной',                             desc: '300 гр',              price: 45000 },
-    { slug: 'first-courses', name: 'Суп гороховый с картофелем на овощном бульоне',     desc: '300 гр. ПОСТНОЕ',     price: 25000 },
+    { slug: 'first-courses', name: 'Суп из ОВОЩЕЙ с курицей и сметаной',              desc: '300 гр',              price: 35000, img: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=400&h=300&fit=crop' },
+    { slug: 'first-courses', name: 'СУП-ХАРЧО с говядиной',                           desc: '300 гр',              price: 45000, img: 'https://images.unsplash.com/photo-1603105037880-880cd4edfb0d?w=400&h=300&fit=crop' },
+    { slug: 'first-courses', name: 'Суп гороховый с картофелем на овощном бульоне',   desc: '300 гр. ПОСТНОЕ',     price: 25000, img: 'https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?w=400&h=300&fit=crop' },
     // Вторые блюда
-    { slug: 'second-courses', name: 'Грудка куриная СУ-ВИД',                  desc: '100 гр',              price: 25000 },
-    { slug: 'second-courses', name: 'СТЕЙК из свиной корейки',                desc: '100 гр',              price: 28500 },
-    { slug: 'second-courses', name: 'Поджарка из свинины',                    desc: '100/50 гр',           price: 27500 },
-    { slug: 'second-courses', name: 'ФРИКАСЕ из куриной грудки',              desc: '200 гр',              price: 35000 },
-    { slug: 'second-courses', name: 'Биточки картофельные, соус грибной',     desc: '150/50 гр. ПОСТНОЕ',  price: 15000 },
-    { slug: 'second-courses', name: 'Паста с соусом Болоньезе',               desc: '300 гр',              price: 27500 },
-    { slug: 'second-courses', name: 'Шашлык из свиной шейки',                 desc: '100 гр',              price: 25000 },
+    { slug: 'second-courses', name: 'Грудка куриная СУ-ВИД',                  desc: '100 гр',              price: 25000, img: 'https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=400&h=300&fit=crop' },
+    { slug: 'second-courses', name: 'СТЕЙК из свиной корейки',                desc: '100 гр',              price: 28500, img: 'https://images.unsplash.com/photo-1558030006-450675393462?w=400&h=300&fit=crop' },
+    { slug: 'second-courses', name: 'Поджарка из свинины',                    desc: '100/50 гр',           price: 27500, img: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop' },
+    { slug: 'second-courses', name: 'ФРИКАСЕ из куриной грудки',              desc: '200 гр',              price: 35000, img: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=400&h=300&fit=crop' },
+    { slug: 'second-courses', name: 'Биточки картофельные, соус грибной',     desc: '150/50 гр. ПОСТНОЕ',  price: 15000, img: 'https://images.unsplash.com/photo-1585325701956-60dd9c8553bc?w=400&h=300&fit=crop' },
+    { slug: 'second-courses', name: 'Паста с соусом Болоньезе',               desc: '300 гр',              price: 27500, img: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400&h=300&fit=crop' },
+    { slug: 'second-courses', name: 'Шашлык из свиной шейки',                 desc: '100 гр',              price: 25000, img: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop' },
     // Гарниры
-    { slug: 'sides', name: 'Картофель ПО-СТОЛИЧНОМУ', desc: '150 гр', price: 15000 },
-    { slug: 'sides', name: 'Рис отварной',             desc: '150 гр', price: 12500 },
-    { slug: 'sides', name: 'Гречка отварная',          desc: '150 гр', price: 10000 },
-    { slug: 'sides', name: 'Спагетти с маслом',        desc: '150 гр', price: 10000 },
-    { slug: 'sides', name: 'ОВОЩИ НА ПАРУ',            desc: '150 гр', price: 19500 },
+    { slug: 'sides', name: 'Картофель ПО-СТОЛИЧНОМУ', desc: '150 гр', price: 15000, img: 'https://images.unsplash.com/photo-1568569350062-ebfa3cb195df?w=400&h=300&fit=crop' },
+    { slug: 'sides', name: 'Рис отварной',             desc: '150 гр', price: 12500, img: 'https://images.unsplash.com/photo-1536304929831-ee1ca9d44906?w=400&h=300&fit=crop' },
+    { slug: 'sides', name: 'Гречка отварная',           desc: '150 гр', price: 10000, img: 'https://images.unsplash.com/photo-1595908129746-57ca1a63dd4d?w=400&h=300&fit=crop' },
+    { slug: 'sides', name: 'Спагетти с маслом',         desc: '150 гр', price: 10000, img: 'https://images.unsplash.com/photo-1551462147-ff29053bfc14?w=400&h=300&fit=crop' },
+    { slug: 'sides', name: 'ОВОЩИ НА ПАРУ',             desc: '150 гр', price: 19500, img: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=400&h=300&fit=crop&q=80' },
     // Напитки
-    { slug: 'drinks', name: 'МОРС',                      desc: '320 мл',            price:  8500 },
-    { slug: 'drinks', name: 'МОРС КУВШИН',               desc: '1 литр',            price: 25000 },
-    { slug: 'drinks', name: 'Сок ФРЕШ Апельсиновый',     desc: '200 мл',            price: 15000 },
-    { slug: 'drinks', name: 'Чай ЧАЙНИК',                desc: 'Заварочный чайник', price: 15000 },
+    { slug: 'drinks', name: 'МОРС',                      desc: '320 мл',            price:  8500, img: 'https://images.unsplash.com/photo-1534353473418-4cfa6c56fd38?w=400&h=300&fit=crop' },
+    { slug: 'drinks', name: 'МОРС КУВШИН',               desc: '1 литр',            price: 25000, img: 'https://images.unsplash.com/photo-1560508179-b2c9a3f8e92b?w=400&h=300&fit=crop' },
+    { slug: 'drinks', name: 'Сок ФРЕШ Апельсиновый',     desc: '200 мл',            price: 15000, img: 'https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?w=400&h=300&fit=crop' },
+    { slug: 'drinks', name: 'Чай ЧАЙНИК',                 desc: 'Заварочный чайник', price: 15000, img: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=400&h=300&fit=crop' },
   ]
 
   for (const item of items) {
     await sql`
-      INSERT INTO menu_items (category_id, name, description, price_kopecks, available, is_business_lunch)
-      SELECT c.id, ${item.name}, ${item.desc}, ${item.price}, TRUE, FALSE
+      INSERT INTO menu_items (category_id, name, description, price_kopecks, image_url, available, is_business_lunch)
+      SELECT c.id, ${item.name}, ${item.desc}, ${item.price}, ${item.img}, TRUE, FALSE
       FROM categories c WHERE c.slug = ${item.slug}
     `
     process.stdout.write('.')
@@ -105,10 +100,12 @@ async function run() {
   console.log('\n[5/5] Verification...')
   const cats = await sql`SELECT slug, name, sort_order FROM categories ORDER BY sort_order`
   const count = await sql`SELECT COUNT(*) AS total FROM menu_items`
+  const withImg = await sql`SELECT COUNT(*) AS total FROM menu_items WHERE image_url IS NOT NULL`
 
   console.log('\nCategories:')
   for (const c of cats) console.log(`  ${c.sort_order}. [${c.slug}] ${c.name}`)
   console.log(`\nTotal menu items: ${count[0].total}`)
+  console.log(`Items with images: ${withImg[0].total}`)
   console.log('\n✅ Seed complete!')
 }
 
