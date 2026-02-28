@@ -1,189 +1,213 @@
 # Архитектура системы "Solovka"
 
-## Общая схема
+Последнее обновление: **28.02.2026**
+
+## Общая схема — 2 Mini App, 1 Vercel проект
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   TELEGRAM CLIENT                        │
-│                                                          │
-│   ┌─────────────────────────────────────────────────┐   │
-│   │              MINI APP (WebView)                  │   │
-│   │         React + Vite + @tma.js/sdk              │   │
-│   │                                                  │   │
-│   │  Pages: Menu │ Cart │ Checkout │ Orders          │   │
-│   │          Subscriptions │ Talons                  │   │
-│   └──────────────────┬──────────────────────────────┘   │
-│                       │ HTTP (Authorization: tma ...)     │
-└───────────────────────┼─────────────────────────────────┘
-                        │
-              ┌─────────▼──────────┐
-              │   VERCEL EDGE      │
-              │  (CDN + Routing)   │
-              └─────────┬──────────┘
-                        │
-        ┌───────────────┼───────────────┐
-        │               │               │
-┌───────▼──────┐ ┌──────▼──────┐ ┌─────▼───────┐
-│  /api/menu   │ │ /api/orders │ │ /api/payment│
-│  /api/users  │ │ /api/talons │ │   /webhook  │
-│ Serverless   │ │ Serverless  │ │  Serverless │
-│  Functions   │ │  Functions  │ │  Functions  │
-└───────┬──────┘ └──────┬──────┘ └─────┬───────┘
-        │               │               │
-        └───────────────┼───────────────┘
-                        │
-              ┌─────────▼──────────┐
-              │   NEON PostgreSQL  │
-              │   (Serverless DB)  │
-              └────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                     TELEGRAM CLIENT                          │
+│                                                              │
+│  ┌──────────────────────┐   ┌──────────────────────────┐    │
+│  │  КЛИЕНТСКИЙ Mini App │   │  АДМИНСКИЙ Mini App      │    │
+│  │  index.html          │   │  admin.html              │    │
+│  │  React + Vite        │   │  React + Vite            │    │
+│  │                      │   │                          │    │
+│  │  Pages: Menu, Cart,  │   │  role=admin:             │    │
+│  │  Checkout, Orders,   │   │    Orders, Menu, Daily,  │    │
+│  │  Profile, Coupons,   │   │    Stats                 │    │
+│  │  Favorites           │   │  role=delivery:          │    │
+│  └──────────┬───────────┘   │    Active, History       │    │
+│              │               └────────────┬─────────────┘    │
+│              │  HTTP (tma auth)           │                   │
+└──────────────┼───────────────────────────┼───────────────────┘
+               │                           │
+     ┌─────────▼───────────────────────────▼──────────┐
+     │              VERCEL (CDN + Edge)                │
+     │   solovka-eight.vercel.app                      │
+     │   /        → index.html (клиент SPA)            │
+     │   /admin/* → admin.html (админ SPA)             │
+     │   /api/*   → serverless functions               │
+     └─────────────────────┬──────────────────────────┘
+                           │
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+   ┌─────▼──────┐  ┌──────▼──────┐  ┌──────▼──────┐
+   │ /api/menu   │  │ /api/orders │  │ /api/admin/ │
+   │ /api/users  │  │ /api/coupons│  │ /api/deliv/ │
+   │ /api/payment│  │ Serverless  │  │ Serverless  │
+   └─────┬──────┘  └──────┬──────┘  └──────┬──────┘
+         │                │                 │
+         └────────────────┼─────────────────┘
+                          │
+                ┌─────────▼──────────┐
+                │  NEON PostgreSQL   │
+                │  (Serverless DB)   │
+                └────────────────────┘
 
-        Параллельно:
-┌─────────────────┐       ┌──────────────────┐
-│  VERCEL CRON    │       │   T-BANK API     │
-│  (07:00 UTC пн-пт) │    │  Эквайринг       │
-│  /api/cron/menu │       │  PaymentURL      │
-└────────┬────────┘       └──────────────────┘
+    Параллельно:
+┌──────────────────┐      ┌──────────────────┐
+│  VERCEL CRON     │      │   T-BANK API     │
+│  07:00 UTC пн-пт │      │   Эквайринг      │
+│  /api/cron/menu  │      │   PaymentURL     │
+└────────┬─────────┘      └──────────────────┘
          │
 ┌────────▼────────┐
 │  TELEGRAM BOT   │
-│  (уведомления + │
-│   рассылка меню)│
+│  grammy         │
+│  1 бот, 3 роли  │
+│  /admin команда │
 └─────────────────┘
 ```
 
----
+## Vite Multi-Page Build
 
-## Почему НЕ нужны Redis / Message Queue для MVP
+```typescript
+// vite.config.ts
+import { resolve } from 'path';
 
-| Компонент | Production-app | Наш MVP |
-|-----------|---------------|---------|
-| Очередь заказов | Redis + BullMQ | Прямая запись в PostgreSQL |
-| Кэш меню | Redis (TTL 1h) | Запрос к Neon (меню обновляется редко) |
-| WebSocket (статус заказа) | Socket.io + Redis Pub/Sub | Уведомления через Telegram Bot |
-| Rate limiting | Redis | Vercel Edge Middleware (built-in) |
-| Session storage | Redis | Stateless JWT или init data |
-
-**Вывод:** Для столовой ~200 человек Vercel + Neon полностью достаточно.
-Redis/очереди добавить позже если нагрузка вырастет.
-
----
-
-## Флоу основных сценариев
-
-### 1. Просмотр меню
-```
-User открывает Mini App
-→ @tma.js/sdk: init() + miniApp.ready()
-→ GET /api/menu (с Authorization: tma <initData>)
-→ Backend: validateInitData() → SQL запрос к Neon
-→ Ответ: массив блюд по категориям
-→ Frontend: отрисовка MenuPage
+export default defineConfig({
+  build: {
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),       // → клиент
+        admin: resolve(__dirname, 'admin.html'),      // → админ+курьер
+      },
+    },
+  },
+})
 ```
 
-### 2. Оформление заказа картой
-```
-User: добавляет блюда в корзину → жмёт "Оформить"
-→ POST /api/orders { items, deliveryRoom, deliveryTime }
-  → Backend: createOrder() в Neon
-→ POST /api/payment/init { orderId, amount }
-  → Backend: T-Bank /v2/Init → получает PaymentURL
-  → Сохраняет payment(status=pending) в Neon
-  → Возвращает { paymentUrl }
-→ Frontend: openLink(paymentUrl) через @tma.js/sdk
-→ User оплачивает на форме T-Bank
-→ T-Bank → POST /api/payment/webhook
-  → Backend: верифицировать Token
-  → orders.status = 'paid'
-  → Bot: sendMessage(user, "✅ Заказ принят!")
-  → Bot: sendMessage(admin, "Новый заказ!")
-  → Ответить: HTTP 200 "OK"
+**Результат билда**: два независимых JS-бандла, общий код (types/utils/api) tree-shaken.
+
+## Vercel Rewrites (vercel.json)
+
+```json
+{
+  "rewrites": [
+    { "source": "/admin/(.*)", "destination": "/admin.html" },
+    { "source": "/((?!api|admin\\.html|assets).*)", "destination": "/index.html" }
+  ]
+}
 ```
 
-### 3. Оплата талоном
+## Структура файлов (плановая после Phase 2)
+
 ```
-User: корзина → "Оплатить талоном"
-→ POST /api/orders/pay-with-talon { orderId }
-  → Backend: BEGIN TRANSACTION
-    → Проверить talons.balance > 0
-    → balance -= 1
-    → INSERT talon_transactions
-    → orders.status = 'paid'
-    → COMMIT
-  → Bot: sendMessage(user, "✅ Списан 1 талон. Остаток: N")
+frontend/
+├── index.html              ← entry: клиентский app
+├── admin.html              ← entry: админ + курьер app
+├── src/
+│   ├── main.tsx            ← клиентский entry point
+│   ├── App.tsx             ← клиентский роутинг
+│   │
+│   ├── types/index.ts      ← ОБЩИЕ типы (оба app используют)
+│   ├── api/                ← ОБЩИЕ API клиенты
+│   │   ├── client.ts       ← fetch wrapper + tma auth
+│   │   ├── menu.ts         ← fetchMenu, fetchCategories, fetchMenuItems
+│   │   ├── orders.ts       ← fetchOrders, createOrder, initPayment
+│   │   └── profile.ts      ← fetchProfile, buyCoupons
+│   ├── utils/index.ts      ← ОБЩИЕ утилиты
+│   ├── hooks/              ← ОБЩИЕ хуки
+│   │
+│   ├── pages/              ← КЛИЕНТСКИЕ страницы
+│   ├── components/         ← КЛИЕНТСКИЕ компоненты
+│   ├── store/              ← КЛИЕНТСКИЕ сторы
+│   ├── mock/               ← мок-данные (dev only)
+│   │
+│   └── admin/              ← АДМИН-МОДУЛЬ (Phase 2+3)
+│       ├── main.tsx        ← админ entry point
+│       ├── AdminApp.tsx    ← роутинг: role=admin → админ, role=delivery → курьер
+│       ├── pages/
+│       │   ├── AdminOrdersPage.tsx
+│       │   ├── AdminMenuPage.tsx
+│       │   ├── AdminDailyMenuPage.tsx
+│       │   ├── AdminStatsPage.tsx     (Phase 4)
+│       │   ├── DeliveryOrdersPage.tsx
+│       │   └── DeliveryHistoryPage.tsx
+│       ├── components/
+│       │   ├── AdminNav.tsx
+│       │   └── DeliveryNav.tsx
+│       └── store/
+│           ├── adminStore.ts
+│           └── deliveryStore.ts
+
+api/                        ← Vercel serverless (ОБЩЕЕ API)
+├── lib/                    ← общие утилиты сервера
+├── admin/                  ← Phase 2: эндпоинты для админа
+│   ├── orders.ts           GET/PUT
+│   ├── menu.ts             GET/POST/PUT/DELETE
+│   └── daily-menu.ts       GET/PUT
+├── delivery/               ← Phase 3: эндпоинты для курьера
+│   ├── orders.ts           GET (ready orders)
+│   ├── pickup.ts           PUT (взять заказ)
+│   ├── complete.ts         PUT (доставлен)
+│   └── history.ts          GET (история за сегодня)
+├── coupons/                ← Phase 1: переименовано из talons/
+│   ├── buy.ts
+│   └── webhook.ts
+├── orders/
+├── payment/
+├── users/
+├── menu.ts
+└── cron/
 ```
 
-### 4. Ежедневная рассылка меню
-```
-Vercel Cron: 07:00 UTC (пн-пт)
-→ GET /api/cron/daily-menu (Authorization: Bearer CRON_SECRET)
-→ Backend:
-  → Получить daily_menu на сегодня из Neon
-  → Получить всех пользователей с notify=true
-  → for user of users:
-      bot.sendMessage(user.telegram_id, formatMenu(menu))
-→ Response: { sent: N }
+## Роли и доступ
+
+| Роль | Mini App | Маршруты | API доступ |
+|------|---------|----------|-----------|
+| `customer` | index.html | /, /item/:id, /cart, /checkout, /orders, /profile, /coupons, /favorites | /api/menu, /api/orders, /api/users, /api/coupons, /api/payment |
+| `admin` | admin.html | /admin/orders, /admin/menu, /admin/daily, /admin/stats | + /api/admin/* |
+| `delivery` | admin.html | /delivery, /delivery/history | + /api/delivery/* |
+
+### Telegram Bot — как открываются Mini App
+
+1. **Все пользователи** → главная кнопка бота → `web_app: { url: '.../index.html' }`
+2. **Команда `/admin`** → бот проверяет `users.role` в БД:
+   - `admin` или `delivery` → inline кнопка с `web_app: { url: '.../admin.html' }`
+   - `customer` → "Нет доступа"
+
+### AdminApp.tsx — внутренний роутинг
+
+```tsx
+// Внутри admin.html Mini App
+const { role } = useAdminAuth(); // GET /api/users/me → role
+if (role === 'admin')    → /admin/orders, /admin/menu, /admin/daily, /admin/stats
+if (role === 'delivery') → /delivery, /delivery/history
+if (role === 'customer') → экран "Нет доступа"
 ```
 
----
+## Жизненный цикл заказа (обновлённый)
+
+```
+pending → paid → ready (админ собрал) → delivering (курьер взял) → delivered
+                                      → cancelled (админ, до delivering)
+```
+
+- `pending` — создан, ожидает оплаты
+- `paid` — оплачен (карта/купон/подписка)
+- `ready` — админ нажал "Готово" (собрал заказ)
+- `delivering` — курьер забрал заказ (Phase 1: добавить в enum)
+- `delivered` — курьер доставил
+- `cancelled` — отменён (админ)
+
+**Нет статуса `preparing`** — вся еда уже готова, админ только собирает заказы.
 
 ## Безопасность
 
-### 1. Аутентификация каждого запроса
-```typescript
-// Каждый API endpoint проверяет initData
-const auth = req.headers.authorization; // "tma <raw_init_data>"
-validate(rawInitData, BOT_TOKEN);       // @tma.js/init-data-node
-const user = parse(rawInitData).user;   // { id, first_name, ... }
-```
+1. **Auth**: `Authorization: tma <initData>` → validate + parse → user.telegram_id → upsert
+2. **Role check**: admin/delivery API middleware проверяет `users.role`
+3. **Webhook verification**: T-Bank Token (SHA-256), Cron CRON_SECRET
+4. **SQL**: template literals Neon (параметризованные запросы)
 
-### 2. Привязка пользователя
-- Пользователь создаётся при первом запросе (upsert по telegram_id)
-- Все операции проверяются по user_id из initData (не из тела запроса)
+## Масштабирование (на будущее)
+1. Redis → Upstash (кэш меню, rate limiting)
+2. Очереди → Upstash QStash (массовые уведомления)
+3. Real-time → polling с интервалом (для админки заказов)
+4. Neon → автомасштабирование (pay per use)
 
-### 3. Webhook верификация
-- T-Bank webhook подписывается Token (SHA-256)
-- Cron Jobs верифицируются через CRON_SECRET header
-
-### 4. SQL Injection
-- Все запросы через template literals `@neondatabase/serverless` (параметризованы)
-
----
-
-## Масштабирование (если понадобится)
-
-1. **Кэш меню** → добавить Upstash Redis (интеграция с Vercel)
-2. **Очередь уведомлений** → Upstash QStash (HTTP-очередь, нативная для Vercel)
-3. **Много пользователей** → Neon автоматически масштабируется (Pay per use)
-4. **Реальный статус заказа** → WebSocket через Pusher или Ably (managed)
-
----
-
-## Окружение и конфигурация
-
-### .env.example
-```bash
-# Telegram Bot
-BOT_TOKEN=123456:ABC-DEF...
-ADMIN_CHAT_ID=123456789
-
-# Neon PostgreSQL
-DATABASE_URL=postgresql://user:pass@ep-xxx.neon.tech/solovka?sslmode=require
-
-# T-Bank Эквайринг
-TBANK_TERMINAL_KEY=YourTerminalKey
-TBANK_TERMINAL_PASSWORD=YourPassword
-
-# App URLs
-APP_URL=https://solovka.vercel.app
-VITE_API_URL=/api
-
-# Vercel Cron защита
-CRON_SECRET=random-secret-string
-```
-
-### Фронтенд env (Vite)
-```bash
-# Только переменные с префиксом VITE_ доступны в браузере
-VITE_API_URL=/api          # относительный путь для Vercel
-VITE_APP_NAME=Столовая
-```
+## Среда разработки
+- **Dev**: `import.meta.env.DEV` → мок-данные, без API
+- **Prod**: реальные API, Neon DB, T-Bank
+- **Preview**: каждый push → Vercel preview URL

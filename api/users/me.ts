@@ -17,23 +17,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const users = await sql`
       SELECT id, telegram_id AS "telegramId", first_name AS "firstName",
              last_name AS "lastName", username, notify_daily_menu AS "notifyDailyMenu",
+             COALESCE(role, 'customer') AS role,
              created_at AS "createdAt"
       FROM users WHERE id = ${userId}
     `
     const user = users[0]
 
-    // Get talon balances
-    const talons = await sql`
+    // Get coupon balances
+    const coupons = await sql`
       SELECT type, balance FROM talons WHERE user_id = ${userId}
     `
 
     // Ensure both lunch and coffee rows exist
-    const talonMap = Object.fromEntries(
-      (talons as { type: string; balance: number }[]).map((t) => [t.type, t.balance]),
+    const couponMap = Object.fromEntries(
+      (coupons as { type: string; balance: number }[]).map((t) => [t.type, t.balance]),
     )
-    const talonResponse = [
-      { type: 'lunch', balance: talonMap['lunch'] ?? 0 },
-      { type: 'coffee', balance: talonMap['coffee'] ?? 0 },
+    const couponResponse = [
+      { type: 'lunch', balance: couponMap['lunch'] ?? 0 },
+      { type: 'coffee', balance: couponMap['coffee'] ?? 0 },
     ]
 
     // Get active subscriptions
@@ -48,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.status(200).json({
       user,
-      talons: talonResponse,
+      coupons: couponResponse,
       subscriptions,
     })
   } catch (err) {

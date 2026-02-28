@@ -23,7 +23,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         o.id,
         o.status,
         o.total_kopecks   AS "totalKopecks",
-        o.delivery_room   AS "deliveryRoom",
+        o.delivery_room   AS "deliveryAddress",
         o.delivery_time   AS "deliveryTime",
         o.comment,
         o.paid_with       AS "paidWith",

@@ -51,7 +51,7 @@ export function formatOrderNotification(
   orderId: number,
   items: { itemName: string; quantity: number }[],
   totalKopecks: number,
-  deliveryRoom: string,
+  deliveryAddress: string,
   deliveryTime: string,
 ): string {
   const itemLines = items
@@ -71,7 +71,7 @@ export function formatOrderNotification(
     itemLines,
     '',
     `💰 Итого: ${total}`,
-    `📍 Доставка: ${deliveryRoom}`,
+    `📍 Адрес: ${deliveryAddress}`,
     `🕐 Время: ${deliveryTime}`,
   ].join('\n')
 }

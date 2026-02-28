@@ -51,6 +51,7 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   paid: 'Оплачен',
   preparing: 'Готовится',
   ready: 'Готов',
+  delivering: 'Доставляется',
   delivered: 'Доставлен',
   cancelled: 'Отменён',
 }
@@ -60,6 +61,7 @@ export const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
   paid: 'text-blue-600 bg-blue-50',
   preparing: 'text-orange-600 bg-orange-50',
   ready: 'text-green-600 bg-green-50',
+  delivering: 'text-blue-700 bg-blue-100',
   delivered: 'text-gray-500 bg-gray-100',
   cancelled: 'text-red-500 bg-red-50',
 }
@@ -67,8 +69,8 @@ export const ORDER_STATUS_COLOR: Record<OrderStatus, string> = {
 export const ACTIVE_ORDER_STATUSES: OrderStatus[] = [
   'pending',
   'paid',
-  'preparing',
   'ready',
+  'delivering',
 ]
 
 // ─── Склонение слов ──────────────────────────────────────
@@ -82,9 +84,9 @@ export function plural(n: number, one: string, few: string, many: string): strin
   return many
 }
 
-// plural(1, 'талон', 'талона', 'талонов') → 'талон'
-// plural(3, 'талон', 'талона', 'талонов') → 'талона'
-// plural(11, 'талон', 'талона', 'талонов') → 'талонов'
+// plural(1, 'купон', 'купона', 'купонов') → 'купон'
+// plural(3, 'купон', 'купона', 'купонов') → 'купона'
+// plural(11, 'купон', 'купона', 'купонов') → 'купонов'
 
 // ─── Время доставки ──────────────────────────────────────
 
@@ -99,14 +101,14 @@ export const DELIVERY_TIMES = [
 
 export type DeliveryTime = (typeof DELIVERY_TIMES)[number]
 
-// ─── Пакеты талонов ──────────────────────────────────────
+// ─── Пакеты купонов ──────────────────────────────────────
 
-import type { TalonPackage } from '@/types'
+import type { CouponPackage } from '@/types'
 
-export const TALON_PACKAGES: TalonPackage[] = [
-  { quantity: 5, priceKopecks: 150000, label: '5 талонов', badge: null },
-  { quantity: 10, priceKopecks: 280000, label: '10 талонов', badge: 'Выгода' },
-  { quantity: 20, priceKopecks: 500000, label: '20 талонов', badge: 'Лучшая цена' },
+export const COUPON_PACKAGES: CouponPackage[] = [
+  { quantity: 5, priceKopecks: 150000, label: '5 купонов', badge: null },
+  { quantity: 10, priceKopecks: 280000, label: '10 купонов', badge: 'Выгода' },
+  { quantity: 20, priceKopecks: 500000, label: '20 купонов', badge: 'Лучшая цена' },
 ]
 
 // ─── Планы подписок ──────────────────────────────────────

@@ -217,9 +217,10 @@ export const MOCK_PROFILE: UserProfile = {
     lastName: 'Петров',
     username: 'ivanpetrov',
     notifyDailyMenu: true,
+    role: 'customer',
     createdAt: new Date().toISOString(),
   },
-  talons: [
+  coupons: [
     { type: 'lunch', balance: 3 },
     { type: 'coffee', balance: 0 },
   ],
@@ -236,9 +237,9 @@ export const MOCK_PROFILE: UserProfile = {
 export const MOCK_ORDERS: Order[] = [
   {
     id: 1234,
-    status: 'preparing',
+    status: 'paid',
     totalKopecks: 50000,
-    deliveryRoom: 'Кабинет 305',
+    deliveryAddress: 'ул. Ленина, д. 15, кв. 42',
     deliveryTime: '12:30',
     comment: 'Без лука, пожалуйста',
     paidWith: 'card',
@@ -253,10 +254,10 @@ export const MOCK_ORDERS: Order[] = [
     id: 1198,
     status: 'delivered',
     totalKopecks: 35000,
-    deliveryRoom: 'Кабинет 305',
+    deliveryAddress: 'ул. Ленина, д. 15, кв. 42',
     deliveryTime: '13:00',
     comment: null,
-    paidWith: 'talon',
+    paidWith: 'coupon',
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
     items: [
       { id: 4, itemId: 10, itemName: 'Поджарка из свинины', quantity: 1, priceKopecks: 27500 },

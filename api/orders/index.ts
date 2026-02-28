@@ -19,7 +19,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           o.id,
           o.status,
           o.total_kopecks   AS "totalKopecks",
-          o.delivery_room   AS "deliveryRoom",
+          o.delivery_room   AS "deliveryAddress",
           o.delivery_time   AS "deliveryTime",
           o.comment,
           o.paid_with       AS "paidWith",
@@ -66,16 +66,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // ── POST /api/orders ─────────────────────────────────
       interface CreateBody {
         items: { itemId: number; quantity: number }[]
-        deliveryRoom: string
+        deliveryAddress: string
         deliveryTime: string
         comment?: string
-        paymentMethod: 'card' | 'talon' | 'subscription'
+        paymentMethod: 'card' | 'coupon' | 'subscription'
       }
 
       const body = req.body as CreateBody
 
       if (!body.items?.length) return res.status(400).json({ error: 'items is required' })
-      if (!body.deliveryRoom) return res.status(400).json({ error: 'deliveryRoom is required' })
+      if (!body.deliveryAddress) return res.status(400).json({ error: 'deliveryAddress is required' })
       if (!body.deliveryTime) return res.status(400).json({ error: 'deliveryTime is required' })
       if (!body.paymentMethod) return res.status(400).json({ error: 'paymentMethod is required' })
 
@@ -110,12 +110,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           (user_id, status, total_kopecks, delivery_room, delivery_time, comment, paid_with)
         VALUES
           (${userId}, ${initialStatus}, ${totalKopecks},
-           ${body.deliveryRoom}, ${body.deliveryTime},
+           ${body.deliveryAddress}, ${body.deliveryTime},
            ${body.comment ?? null}, ${body.paymentMethod})
         RETURNING
           id, status,
           total_kopecks   AS "totalKopecks",
-          delivery_room   AS "deliveryRoom",
+          delivery_room   AS "deliveryAddress",
           delivery_time   AS "deliveryTime",
           comment,
           paid_with       AS "paidWith",
@@ -134,24 +134,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         `
       }
 
-      // Talon payment: deduct balance
-      if (body.paymentMethod === 'talon') {
-        const talon = await sql`
+      // Coupon payment: deduct balance
+      if (body.paymentMethod === 'coupon') {
+        const coupon = await sql`
           SELECT id, balance FROM talons
           WHERE user_id = ${userId} AND type = 'lunch' AND balance > 0
         `
-        if (!(talon as unknown[]).length) {
-          return res.status(400).json({ error: 'No lunch talons available' })
+        if (!(coupon as unknown[]).length) {
+          return res.status(400).json({ error: 'No lunch coupons available' })
         }
-        const talonRow = (talon as { id: number; balance: number }[])[0]
+        const couponRow = (coupon as { id: number; balance: number }[])[0]
 
         await sql`
           UPDATE talons SET balance = balance - 1, updated_at = NOW()
-          WHERE id = ${talonRow.id}
+          WHERE id = ${couponRow.id}
         `
         await sql`
           INSERT INTO talon_transactions (talon_id, order_id, delta, description)
-          VALUES (${talonRow.id}, ${orderId}, -1, ${'Заказ #' + orderId})
+          VALUES (${couponRow.id}, ${orderId}, -1, ${'Заказ #' + orderId})
         `
       }
 
@@ -185,7 +185,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             quantity: i.quantity,
           })),
           totalKopecks,
-          body.deliveryRoom,
+          body.deliveryAddress,
           body.deliveryTime,
         )
         await notifyUser(auth.user.id, notification)

@@ -1,6 +1,6 @@
 import { api } from './client'
 import { MOCK_PROFILE } from '@/mock/data'
-import type { UserProfile, TalonType } from '@/types'
+import type { UserProfile, CouponType } from '@/types'
 
 const IS_DEV = import.meta.env.DEV
 
@@ -9,11 +9,11 @@ export async function fetchProfile(): Promise<UserProfile> {
   return api.get<UserProfile>('/users/me')
 }
 
-export async function buyTalons(type: TalonType, quantity: 5 | 10 | 20): Promise<{ newBalance: number }> {
+export async function buyCoupons(type: CouponType, quantity: 5 | 10 | 20): Promise<{ newBalance: number }> {
   if (IS_DEV) {
     return Promise.resolve({ newBalance: 10 })
   }
-  return api.post<{ newBalance: number }>('/talons/buy', { type, quantity })
+  return api.post<{ newBalance: number }>('/coupons/buy', { type, quantity })
 }
 
 export async function buySubscription(type: string): Promise<{ paymentUrl: string }> {

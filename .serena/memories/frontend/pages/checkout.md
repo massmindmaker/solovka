@@ -3,49 +3,44 @@
 Файл: `frontend/src/pages/Checkout/CheckoutPage.tsx`
 
 ## Функциональность
-- Поле ввода кабинета/места доставки (обязательное, валидация: не пустое)
-- Выбор времени доставки — кнопки из `DELIVERY_TIMES` (`utils/index.ts`)
-- Необязательный комментарий (textarea, max 200 символов)
-- Выбор способа оплаты: карта / талон / подписка
-- Итог заказа (список позиций + сумма)
-- MainButton: "Оплатить — XXX ₽" (disabled если поле кабинета пустое)
+- Адрес доставки (обязательный, свободный текст) — placeholder "Улица, дом, квартира" (Phase 1)
+- Выбор времени — кнопки из `DELIVERY_TIMES` (11:30–14:00)
+- Комментарий (необязательный, max 200 символов)
+- Выбор оплаты: карта / купон / подписка
+- Итог заказа: список позиций + сумма
+- Sticky CTA: "Оплатить — XXX ₽" (disabled если адрес пустой)
+- BottomNav СКРЫТ на этой странице
 
 ## Логика оплаты
 
 ### Карта (T-Bank)
-1. `createOrder(payload)` → получить `order.id`
-2. `initPayment(order.id)` → получить `paymentUrl`
-3. `tg.showPopup` с подтверждением → `window.open(paymentUrl)`
-4. `clearCart()` → `navigate('/order-success/:id')`
+1. `createOrder(payload)` → `order.id`
+2. `initPayment(order.id)` → `paymentUrl`
+3. popup подтверждение → `window.open(paymentUrl)` (TODO: → `openLink()`)
+4. `clearCart()` → `/order-success/:id`
 
-> **TODO для прода:** заменить `window.open` на `openLink()` из `@tma.js/sdk`
-
-### Талон / Подписка
+### Купон / Подписка
 1. `createOrder(payload)` → сразу success
-2. `haptic.notificationOccurred('success')`
-3. `clearCart()` → `navigate('/order-success/:id')`
+2. haptic success
+3. `clearCart()` → `/order-success/:id`
 
-## Доступность способов оплаты
-- **Талон**: отключён если `getTalonBalance('lunch') === 0`
-- **Подписка**: отключена если `!hasActiveSubscription('lunch')`
-- Данные берутся из `userStore`
-
-## Вспомогательные компоненты (внутри файла)
-- `<Section title>` — секция с заголовком
-- `<PaymentOption>` — кнопка выбора способа оплаты (radio-style)
-
-## Импорты
-- `DELIVERY_TIMES` — из `utils/index.ts`
-- `type DeliveryTime` — из `utils/index.ts` (реэкспорт)
-- `createOrder`, `initPayment` — из `api/orders.ts`
-- `useCartStore`, `useUserStore` — stores
+## Доступность оплаты
+- **Купон**: disabled если `getCouponBalance('lunch') === 0` (→ rename Phase 1)
+- **Подписка**: disabled если `!hasActiveSubscription('lunch')`
 
 ## Состояния
 ```typescript
-step: 'details' | 'payment'   // зарезервировано для future multi-step
-deliveryRoom: string           // обязательное поле
-deliveryTime: DeliveryTime     // default: '12:00'
-comment: string                // необязательное
-paymentMethod: PaymentMethod   // 'card' | 'talon' | 'subscription'
-submitting: boolean            // блокирует повторный submit
+deliveryRoom: string     // → deliveryAddress (Phase 1)
+deliveryTime: DeliveryTime // default: '12:00'
+comment: string
+paymentMethod: PaymentMethod // 'card' | 'coupon' (was 'talon')
+submitting: boolean
 ```
+
+## Phase 1 изменения
+- `deliveryRoom` → `deliveryAddress`
+- `SAVED_ROOM_KEY` → `SAVED_ADDRESS_KEY`
+- Убрать `ROOM_SUGGESTIONS`
+- `PaymentMethod 'talon'` → `'coupon'`
+- `getTalonBalance` → `getCouponBalance`
+- Placeholder: "Улица, дом, квартира"

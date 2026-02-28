@@ -13,7 +13,7 @@ import CheckoutPage from '@/pages/Checkout/CheckoutPage'
 import OrderSuccessPage from '@/pages/OrderSuccess/OrderSuccessPage'
 import OrdersPage from '@/pages/Orders/OrdersPage'
 import ProfilePage from '@/pages/Profile/ProfilePage'
-import TalonsPage from '@/pages/Talons/TalonsPage'
+import CouponsPage from '@/pages/Coupons/CouponsPage'
 
 // Страницы без BottomNav — не нужен нижний паддинг
 const NO_NAV_PATTERNS = ['/item/', '/cart', '/checkout', '/order-success/', '/orders/']
@@ -51,7 +51,7 @@ function AppContent() {
           <Route path="/orders/:id" element={<OrderSuccessPage mode="detail" />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/talons" element={<TalonsPage />} />
+          <Route path="/coupons" element={<CouponsPage />} />
         </Routes>
       </main>
       <BottomNav />

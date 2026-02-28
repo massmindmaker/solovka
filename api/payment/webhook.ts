@@ -41,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         UPDATE orders SET status = 'paid', updated_at = NOW()
         WHERE id = ${orderId} AND status = 'pending'
         RETURNING id, user_id AS "userId", total_kopecks AS "totalKopecks",
-                  delivery_room AS "deliveryRoom", delivery_time AS "deliveryTime"
+                  delivery_room AS "deliveryAddress", delivery_time AS "deliveryTime"
       `
 
       if ((orderRows as unknown[]).length > 0) {
@@ -49,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           id: number
           userId: number
           totalKopecks: number
-          deliveryRoom: string
+          deliveryAddress: string
           deliveryTime: string
         }[])[0]
 
@@ -71,7 +71,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             order.id,
             itemRows as { itemName: string; quantity: number }[],
             order.totalKopecks,
-            order.deliveryRoom,
+            order.deliveryAddress,
             order.deliveryTime,
           )
           await notifyUser(telegramId, notification)

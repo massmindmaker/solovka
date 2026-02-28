@@ -16,7 +16,7 @@ export async function createOrder(payload: CreateOrderPayload): Promise<Order> {
       id: Math.floor(Math.random() * 9000) + 1000,
       status: payload.paymentMethod === 'card' ? 'pending' : 'paid',
       totalKopecks: payload.items.reduce((s, _) => s + 35000, 0),
-      deliveryRoom: payload.deliveryRoom,
+      deliveryAddress: payload.deliveryAddress,
       deliveryTime: payload.deliveryTime,
       comment: payload.comment ?? null,
       paidWith: payload.paymentMethod,

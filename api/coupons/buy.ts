@@ -4,7 +4,7 @@ import { requireAuth } from '../lib/auth'
 import { upsertUser } from '../lib/userHelper'
 import { initPayment as tbankInit } from '../lib/tbank'
 import { notifyUser } from '../lib/bot'
-import { TALON_PACKAGES } from '../lib/constants'
+import { COUPON_PACKAGES } from '../lib/constants'
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'quantity must be 5, 10, or 20' })
   }
 
-  const pkg = TALON_PACKAGES.find((p) => p.quantity === quantity)
+  const pkg = COUPON_PACKAGES.find((p) => p.quantity === quantity)
   if (!pkg) return res.status(400).json({ error: 'Invalid package' })
 
   try {
@@ -32,14 +32,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const userId = await upsertUser(sql, auth.user)
     const appUrl = process.env.APP_URL ?? 'https://localhost:5173'
 
-    // Create a placeholder order for the talon purchase payment
+    // Create a placeholder order for the coupon purchase payment
     const orderRows = await sql`
       INSERT INTO orders
         (user_id, status, total_kopecks, delivery_room, delivery_time, comment, paid_with)
       VALUES
         (${userId}, 'pending', ${pkg.priceKopecks},
          'N/A', 'N/A',
-         ${'Покупка ' + quantity + ' ' + type + ' талонов'},
+         ${'Покупка ' + quantity + ' ' + type + ' купонов'},
          'card')
       RETURNING id
     `
@@ -48,28 +48,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Initiate T-Bank payment
     const tbankResponse = await tbankInit({
       Amount: pkg.priceKopecks,
-      OrderId: `talon-${orderId}`,
-      Description: `Покупка ${quantity} ${type === 'lunch' ? 'обеденных' : 'кофейных'} талонов`,
-      NotificationURL: `${appUrl}/api/talons/webhook`,
-      SuccessURL: `${appUrl}/talons`,
-      FailURL: `${appUrl}/talons`,
+      OrderId: `coupon-${orderId}`,
+      Description: `Покупка ${quantity} ${type === 'lunch' ? 'обеденных' : 'кофейных'} купонов`,
+      NotificationURL: `${appUrl}/api/coupons/webhook`,
+      SuccessURL: `${appUrl}/coupons`,
+      FailURL: `${appUrl}/coupons`,
     })
 
     await sql`
       INSERT INTO payments (order_id, tbank_payment_id, tbank_order_id, amount_kopecks)
-      VALUES (${orderId}, ${tbankResponse.PaymentId}, ${'talon-' + orderId}, ${pkg.priceKopecks})
+      VALUES (${orderId}, ${tbankResponse.PaymentId}, ${'coupon-' + orderId}, ${pkg.priceKopecks})
     `
 
-    // Store metadata about what was purchased so the webhook can credit talons
+    // Store metadata about what was purchased so the webhook can credit coupons
     await sql`
-      UPDATE orders SET comment = ${'talon_purchase:' + type + ':' + quantity}
+      UPDATE orders SET comment = ${'coupon_purchase:' + type + ':' + quantity}
       WHERE id = ${orderId}
     `
 
     return res.status(200).json({ paymentUrl: tbankResponse.PaymentURL })
   } catch (err) {
-    console.error('/api/talons/buy error:', err)
-    res.status(500).json({ error: 'Failed to initiate talon purchase' })
+    console.error('/api/coupons/buy error:', err)
+    res.status(500).json({ error: 'Failed to initiate coupon purchase' })
   }
 }
 

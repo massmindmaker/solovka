@@ -88,10 +88,10 @@ export default function ProfilePage() {
     </div>
   )
 
-  const { user, talons, subscriptions } = profile
+  const { user, coupons, subscriptions } = profile
 
-  const lunchBalance = talons.find((t) => t.type === 'lunch')?.balance ?? 0
-  const coffeeBalance = talons.find((t) => t.type === 'coffee')?.balance ?? 0
+  const lunchBalance = coupons.find((c) => c.type === 'lunch')?.balance ?? 0
+  const coffeeBalance = coupons.find((c) => c.type === 'coffee')?.balance ?? 0
 
   function getSubscription(type: SubscriptionType) {
     return subscriptions.find((s) => s.active && s.type === type)
@@ -109,7 +109,7 @@ export default function ProfilePage() {
       const p = profile!
       setProfile({
         user: { ...user, notifyDailyMenu: newValue },
-        talons: p.talons,
+        coupons: p.coupons,
         subscriptions: p.subscriptions,
       })
     } catch {
@@ -120,7 +120,7 @@ export default function ProfilePage() {
   }
 
   function handleBuySubscription(_type: SubscriptionType) {
-    navigate('/talons')
+    navigate('/coupons')
   }
 
   const fullName = [user.firstName, user.lastName].filter(Boolean).join(' ')
@@ -149,27 +149,27 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Талоны */}
+        {/* Купоны */}
         <div>
-          <SectionHeader title="Талоны" />
+          <SectionHeader title="Купоны" />
           <div className="bg-[var(--tg-theme-secondary-bg-color)] rounded-2xl overflow-hidden">
-            <TalonRow
+            <CouponRow
               icon="🍱"
-              label="Обеденные талоны"
+              label="Обеденные купоны"
               balance={lunchBalance}
             />
             <div className="mx-4 h-px bg-[var(--tg-theme-bg-color)]" />
-            <TalonRow
+            <CouponRow
               icon="☕"
-              label="Кофейные талоны"
+              label="Кофейные купоны"
               balance={coffeeBalance}
             />
           </div>
           <button
-            onClick={() => navigate('/talons')}
+            onClick={() => navigate('/coupons')}
             className="mt-2 w-full py-2.5 rounded-xl text-sm font-semibold text-emerald-600 bg-emerald-50 active:bg-emerald-100 transition-colors"
           >
-            Пополнить талоны →
+            Пополнить купоны →
           </button>
         </div>
 
@@ -232,10 +232,10 @@ export default function ProfilePage() {
   )
 }
 
-// ─── Talon row ───────────────────────────────────────────
+// ─── Coupon row ──────────────────────────────────────────
 
-function TalonRow({ icon, label, balance }: { icon: string; label: string; balance: number }) {
-  const text = `${balance} ${plural(balance, 'талон', 'талона', 'талонов')}`
+function CouponRow({ icon, label, balance }: { icon: string; label: string; balance: number }) {
+  const text = `${balance} ${plural(balance, 'купон', 'купона', 'купонов')}`
   return (
     <div className="flex items-center justify-between px-4 py-3">
       <div className="flex items-center gap-3">

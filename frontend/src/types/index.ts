@@ -37,6 +37,8 @@ export interface TelegramUser {
   isPremium: boolean
 }
 
+export type UserRole = 'customer' | 'admin' | 'delivery'
+
 export interface AppUser {
   id: number
   telegramId: number
@@ -44,6 +46,7 @@ export interface AppUser {
   lastName: string | null
   username: string | null
   notifyDailyMenu: boolean
+  role: UserRole
   createdAt: string
 }
 
@@ -64,10 +67,11 @@ export type OrderStatus =
   | 'paid'
   | 'preparing'
   | 'ready'
+  | 'delivering'
   | 'delivered'
   | 'cancelled'
 
-export type PaymentMethod = 'card' | 'talon' | 'subscription'
+export type PaymentMethod = 'card' | 'coupon' | 'subscription'
 
 export interface OrderItem {
   id: number
@@ -81,7 +85,7 @@ export interface Order {
   id: number
   status: OrderStatus
   totalKopecks: number
-  deliveryRoom: string
+  deliveryAddress: string
   deliveryTime: string
   comment: string | null
   paidWith: PaymentMethod | null
@@ -91,7 +95,7 @@ export interface Order {
 
 export interface CreateOrderPayload {
   items: { itemId: number; quantity: number }[]
-  deliveryRoom: string
+  deliveryAddress: string
   deliveryTime: string
   comment?: string
   paymentMethod: PaymentMethod
@@ -116,23 +120,23 @@ export interface SubscriptionPlan {
   icon: string
 }
 
-// ─── Талоны ──────────────────────────────────────────────
+// ─── Купоны ──────────────────────────────────────────────
 
-export type TalonType = 'lunch' | 'coffee'
+export type CouponType = 'lunch' | 'coffee'
 
-export interface TalonBalance {
-  type: TalonType
+export interface CouponBalance {
+  type: CouponType
   balance: number
 }
 
-export interface TalonTransaction {
+export interface CouponTransaction {
   id: number
   delta: number
   description: string
   createdAt: string
 }
 
-export interface TalonPackage {
+export interface CouponPackage {
   quantity: 5 | 10 | 20
   priceKopecks: number
   label: string
@@ -155,6 +159,6 @@ export interface ApiError {
 
 export interface UserProfile {
   user: AppUser
-  talons: TalonBalance[]
+  coupons: CouponBalance[]
   subscriptions: Subscription[]
 }

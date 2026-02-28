@@ -57,7 +57,7 @@ function OrderCard({ order, onClick, onRepeat, repeatLoading }: OrderCardProps) 
         {/* Подвал: сумма + доставка */}
         <div className="pt-2 border-t border-gray-100 flex items-center justify-between">
           <div className="flex items-center gap-3 text-xs text-gray-400">
-            <span>📍 {order.deliveryRoom}</span>
+            <span>📍 {order.deliveryAddress}</span>
             <span>🕐 {order.deliveryTime}</span>
           </div>
           <span className="font-bold text-gray-900">

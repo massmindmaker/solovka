@@ -10,25 +10,25 @@ import { formatPrice, DELIVERY_TIMES, cn } from '@/utils'
 import type { DeliveryTime } from '@/utils'
 import type { CreateOrderPayload, PaymentMethod } from '@/types'
 
-const SAVED_ROOM_KEY = 'solovka_last_room'
+const SAVED_ADDRESS_KEY = 'solovka_last_address'
+const SAVED_ADDRESSES_KEY = 'solovka_addresses'
 
-// Список популярных мест доставки — настройте под реальные кабинеты
-const ROOM_SUGGESTIONS = [
-  'Кабинет 101',
-  'Кабинет 102',
-  'Кабинет 201',
-  'Кабинет 202',
-  'Кабинет 301',
-  'Кабинет 302',
-  'Кабинет 303',
-  'Кабинет 304',
-  'Кабинет 305',
-  'Переговорная А',
-  'Переговорная Б',
-  'Опенспейс 1 этаж',
-  'Опенспейс 2 этаж',
-  'Ресепшн',
-]
+/** Get saved address history from localStorage */
+function getSavedAddresses(): string[] {
+  try {
+    const raw = localStorage.getItem(SAVED_ADDRESSES_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
+  }
+}
+
+/** Save address to history (max 10, most recent first) */
+function saveAddressToHistory(address: string) {
+  const addresses = getSavedAddresses().filter((a) => a !== address)
+  addresses.unshift(address)
+  localStorage.setItem(SAVED_ADDRESSES_KEY, JSON.stringify(addresses.slice(0, 10)))
+}
 
 // ─── Секция формы ─────────────────────────────────────────
 
@@ -92,22 +92,22 @@ export default function CheckoutPage() {
   const navigate = useNavigate()
   const { haptic, tg } = useTelegram()
   const { items, totalKopecks, clearCart } = useCartStore()
-  const { getTalonBalance, hasActiveSubscription } = useUserStore()
+  const { getCouponBalance, hasActiveSubscription } = useUserStore()
 
-  // Восстанавливаем последний кабинет
-  const [deliveryRoom, setDeliveryRoom] = useState(
-    () => localStorage.getItem(SAVED_ROOM_KEY) ?? ''
+  // Восстанавливаем последний адрес
+  const [deliveryAddress, setDeliveryAddress] = useState(
+    () => localStorage.getItem(SAVED_ADDRESS_KEY) ?? ''
   )
-  const [roomError, setRoomError] = useState('')
-  const [roomSuggestionsOpen, setRoomSuggestionsOpen] = useState(false)
+  const [addressError, setAddressError] = useState('')
+  const [addressSuggestionsOpen, setAddressSuggestionsOpen] = useState(false)
   const [deliveryTime, setDeliveryTime] = useState<DeliveryTime>('12:00')
   const [comment, setComment] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card')
   const [submitting, setSubmitting] = useState(false)
-  const roomInputRef = useRef<HTMLInputElement>(null)
-  const roomWrapRef = useRef<HTMLDivElement>(null)
+  const addressInputRef = useRef<HTMLInputElement>(null)
+  const addressWrapRef = useRef<HTMLDivElement>(null)
 
-  const lunchBalance = getTalonBalance('lunch')
+  const lunchBalance = getCouponBalance('lunch')
   const hasLunchSub = hasActiveSubscription('lunch')
   const total = totalKopecks()
 
@@ -118,26 +118,26 @@ export default function CheckoutPage() {
     if (items.length === 0) navigate('/', { replace: true })
   }, [items.length, navigate])
 
-  // Сохраняем кабинет при изменении
-  function handleRoomChange(val: string) {
-    setDeliveryRoom(val)
-    setRoomError('')
-    setRoomSuggestionsOpen(val.length > 0)
-    localStorage.setItem(SAVED_ROOM_KEY, val)
+  // Сохраняем адрес при изменении
+  function handleAddressChange(val: string) {
+    setDeliveryAddress(val)
+    setAddressError('')
+    setAddressSuggestionsOpen(val.length > 0 || getSavedAddresses().length > 0)
+    localStorage.setItem(SAVED_ADDRESS_KEY, val)
   }
 
-  function handleRoomSelect(val: string) {
-    setDeliveryRoom(val)
-    setRoomError('')
-    setRoomSuggestionsOpen(false)
-    localStorage.setItem(SAVED_ROOM_KEY, val)
+  function handleAddressSelect(val: string) {
+    setDeliveryAddress(val)
+    setAddressError('')
+    setAddressSuggestionsOpen(false)
+    localStorage.setItem(SAVED_ADDRESS_KEY, val)
     haptic.selectionChanged()
   }
 
   // Закрываем список при клике вне
   const handleOutsideClick = useCallback((e: MouseEvent) => {
-    if (roomWrapRef.current && !roomWrapRef.current.contains(e.target as Node)) {
-      setRoomSuggestionsOpen(false)
+    if (addressWrapRef.current && !addressWrapRef.current.contains(e.target as Node)) {
+      setAddressSuggestionsOpen(false)
     }
   }, [])
 
@@ -146,18 +146,19 @@ export default function CheckoutPage() {
     return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [handleOutsideClick])
 
-  // Фильтруем подсказки по введённому тексту
-  const filteredSuggestions = deliveryRoom.trim().length === 0
-    ? ROOM_SUGGESTIONS
-    : ROOM_SUGGESTIONS.filter((s) =>
-        s.toLowerCase().includes(deliveryRoom.toLowerCase())
+  // Фильтруем сохранённые адреса по введённому тексту
+  const savedAddresses = getSavedAddresses()
+  const filteredSuggestions = deliveryAddress.trim().length === 0
+    ? savedAddresses
+    : savedAddresses.filter((s) =>
+        s.toLowerCase().includes(deliveryAddress.toLowerCase())
       )
 
   // Валидация
   function validate(): boolean {
-    if (deliveryRoom.trim().length < 2) {
-      setRoomError('Укажите куда доставить (минимум 2 символа)')
-      roomInputRef.current?.focus()
+    if (deliveryAddress.trim().length < 2) {
+      setAddressError('Укажите адрес доставки (минимум 2 символа)')
+      addressInputRef.current?.focus()
       haptic.notificationOccurred('error')
       return false
     }
@@ -174,13 +175,14 @@ export default function CheckoutPage() {
     try {
       const payload: CreateOrderPayload = {
         items: items.map((i) => ({ itemId: i.id, quantity: i.quantity })),
-        deliveryRoom: deliveryRoom.trim(),
+        deliveryAddress: deliveryAddress.trim(),
         deliveryTime,
         comment: comment.trim() || undefined,
         paymentMethod,
       }
 
       const order = await createOrder(payload)
+      saveAddressToHistory(deliveryAddress.trim())
 
       if (paymentMethod === 'card') {
         const { paymentUrl } = await initPayment(order.id)
@@ -267,34 +269,34 @@ export default function CheckoutPage() {
         {/* ── 2. КУДА ДОСТАВИТЬ ─────────────────────────── */}
         <div className="bg-[var(--tg-theme-bg-color)] rounded-2xl px-4 py-4 space-y-3">
           <Section title="📍 Куда доставить">
-            <div ref={roomWrapRef} className="relative">
+            <div ref={addressWrapRef} className="relative">
               <input
-                ref={roomInputRef}
+                ref={addressInputRef}
                 type="text"
-                value={deliveryRoom}
-                onChange={(e) => handleRoomChange(e.target.value)}
-                onFocus={() => setRoomSuggestionsOpen(true)}
-                placeholder="Кабинет, этаж или место"
+                value={deliveryAddress}
+                onChange={(e) => handleAddressChange(e.target.value)}
+                onFocus={() => setAddressSuggestionsOpen(true)}
+                placeholder="Улица, дом, квартира"
                 maxLength={80}
                 autoComplete="off"
                 className={cn(
                   'w-full px-4 py-3 rounded-xl text-base outline-none transition-all',
                   'bg-[var(--tg-theme-secondary-bg-color)] text-[var(--tg-theme-text-color)]',
                   'placeholder:text-[var(--tg-theme-hint-color)]',
-                  roomError ? 'ring-2 ring-red-400' : 'focus:ring-2 focus:ring-emerald-500',
+                  addressError ? 'ring-2 ring-red-400' : 'focus:ring-2 focus:ring-emerald-500',
                 )}
               />
 
               {/* Выпадающий список подсказок */}
-              {roomSuggestionsOpen && filteredSuggestions.length > 0 && (
+              {addressSuggestionsOpen && filteredSuggestions.length > 0 && (
                 <div className="absolute left-0 right-0 top-full mt-1 z-20 bg-[var(--tg-theme-bg-color)] rounded-xl shadow-lg border border-[var(--tg-theme-secondary-bg-color)] overflow-hidden animate-slide-up max-h-48 overflow-y-auto">
                   {filteredSuggestions.map((s) => (
                     <button
                       key={s}
-                      onMouseDown={(e) => { e.preventDefault(); handleRoomSelect(s) }}
+                      onMouseDown={(e) => { e.preventDefault(); handleAddressSelect(s) }}
                       className={cn(
                         'w-full text-left px-4 py-2.5 text-sm transition-colors',
-                        s === deliveryRoom
+                        s === deliveryAddress
                           ? 'bg-emerald-500 text-white'
                           : 'text-[var(--tg-theme-text-color)] hover:bg-[var(--tg-theme-secondary-bg-color)] active:bg-[var(--tg-theme-secondary-bg-color)]',
                       )}
@@ -305,10 +307,10 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {roomError && (
-                <p className="text-xs text-red-500 mt-1.5 px-1 animate-fade-in">{roomError}</p>
+              {addressError && (
+                <p className="text-xs text-red-500 mt-1.5 px-1 animate-fade-in">{addressError}</p>
               )}
-              {deliveryRoom && !roomError && (
+              {deliveryAddress && !addressError && (
                 <p className="text-xs text-[var(--tg-theme-hint-color)] mt-1.5 px-1">
                   💾 Сохранено — подставится при следующем заказе
                 </p>
@@ -352,12 +354,12 @@ export default function CheckoutPage() {
                 onSelect={() => { haptic.selectionChanged(); setPaymentMethod('card') }}
               />
               <PaymentOption
-                id="talon"
+                id="coupon"
                 icon="🎫"
-                label="Талоном на ланч"
-                sublabel={lunchBalance > 0 ? `Баланс: ${lunchBalance} шт.` : 'Нет талонов — купите в Профиле'}
-                selected={paymentMethod === 'talon'}
-                onSelect={() => { haptic.selectionChanged(); setPaymentMethod('talon') }}
+                label="Купоном на ланч"
+                sublabel={lunchBalance > 0 ? `Баланс: ${lunchBalance} шт.` : 'Нет купонов — купите в Профиле'}
+                selected={paymentMethod === 'coupon'}
+                onSelect={() => { haptic.selectionChanged(); setPaymentMethod('coupon') }}
                 disabled={lunchBalance === 0}
               />
               <PaymentOption

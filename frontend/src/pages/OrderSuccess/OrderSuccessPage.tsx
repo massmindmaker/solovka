@@ -13,14 +13,15 @@ import type { Order, OrderStatus } from '@/types'
 // ─── Шаги статуса (pipeline) ─────────────────────────────
 
 const STATUS_STEPS: { status: OrderStatus; label: string; icon: string }[] = [
-  { status: 'pending',   label: 'Принят',    icon: '📋' },
-  { status: 'paid',      label: 'Оплачен',   icon: '💳' },
-  { status: 'preparing', label: 'Готовится', icon: '👨‍🍳' },
-  { status: 'ready',     label: 'Готов',     icon: '✅' },
-  { status: 'delivered', label: 'Доставлен', icon: '🎉' },
+  { status: 'pending',    label: 'Принят',      icon: '📋' },
+  { status: 'paid',       label: 'Оплачен',     icon: '💳' },
+  { status: 'preparing',  label: 'Готовится',    icon: '👨‍🍳' },
+  { status: 'ready',      label: 'Готов',        icon: '✅' },
+  { status: 'delivering', label: 'Доставляется', icon: '🚗' },
+  { status: 'delivered',  label: 'Доставлен',    icon: '🎉' },
 ]
 
-const STATUS_ORDER: OrderStatus[] = ['pending', 'paid', 'preparing', 'ready', 'delivered']
+const STATUS_ORDER: OrderStatus[] = ['pending', 'paid', 'preparing', 'ready', 'delivering', 'delivered']
 
 function getStepIndex(status: OrderStatus): number {
   return STATUS_ORDER.indexOf(status)
@@ -262,7 +263,7 @@ export default function OrderSuccessPage({ mode = 'success' }: { mode?: 'success
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-[var(--tg-theme-hint-color)]">📍 Доставка</span>
-              <span className="font-medium text-[var(--tg-theme-text-color)]">{order.deliveryRoom}</span>
+              <span className="font-medium text-[var(--tg-theme-text-color)]">{order.deliveryAddress}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-[var(--tg-theme-hint-color)]">🕐 Время</span>
@@ -272,7 +273,7 @@ export default function OrderSuccessPage({ mode = 'success' }: { mode?: 'success
               <div className="flex justify-between text-sm">
                 <span className="text-[var(--tg-theme-hint-color)]">💳 Оплата</span>
                 <span className="font-medium text-[var(--tg-theme-text-color)]">
-                  {order.paidWith === 'card' ? 'Картой' : order.paidWith === 'talon' ? 'Талон' : 'Подписка'}
+                  {order.paidWith === 'card' ? 'Картой' : order.paidWith === 'coupon' ? 'Купон' : 'Подписка'}
                 </span>
               </div>
             )}

@@ -1,34 +1,34 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useUserStore } from '@/store/userStore'
-import { buyTalons } from '@/api/profile'
+import { buyCoupons } from '@/api/profile'
 import { useTelegram } from '@/hooks/useTelegram'
 import { useBackButton } from '@/hooks/useBackButton'
-import { formatPrice, formatDateTime, plural, TALON_PACKAGES } from '@/utils'
-import type { TalonType } from '@/types'
+import { formatPrice, formatDateTime, plural, COUPON_PACKAGES } from '@/utils'
+import type { CouponType } from '@/types'
 
 // ─── Mock transaction history (пока нет API) ─────────────
 
 const MOCK_TRANSACTIONS = [
   {
     id: 1,
-    type: 'lunch' as TalonType,
+    type: 'lunch' as CouponType,
     delta: +10,
-    description: 'Покупка 10 талонов',
+    description: 'Покупка 10 купонов',
     createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 2,
-    type: 'lunch' as TalonType,
+    type: 'lunch' as CouponType,
     delta: -1,
     description: 'Заказ #1234',
     createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
   },
   {
     id: 3,
-    type: 'coffee' as TalonType,
+    type: 'coffee' as CouponType,
     delta: +5,
-    description: 'Покупка 5 талонов',
+    description: 'Покупка 5 купонов',
     createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
   },
 ]
@@ -57,7 +57,7 @@ function TypeTab({ active, icon, label, balance, onClick }: TypeTabProps) {
       <span className="text-2xl leading-none">{icon}</span>
       <span className="text-xs font-medium">{label}</span>
       <span className={['text-sm font-bold', active ? 'opacity-90' : 'text-emerald-600'].join(' ')}>
-        {balance} {plural(balance, 'талон', 'талона', 'талонов')}
+        {balance} {plural(balance, 'купон', 'купона', 'купонов')}
       </span>
     </button>
   )
@@ -75,7 +75,7 @@ interface PackageCardProps {
 }
 
 function PackageCard({ quantity, priceKopecks, badge, loading, onBuy }: PackageCardProps) {
-  const pricePerTalon = Math.round(priceKopecks / quantity)
+  const pricePerCoupon = Math.round(priceKopecks / quantity)
 
   return (
     <button
@@ -86,7 +86,7 @@ function PackageCard({ quantity, priceKopecks, badge, loading, onBuy }: PackageC
       <div className="text-left">
         <div className="flex items-center gap-2">
           <span className="font-bold text-[var(--tg-theme-text-color)] text-lg">
-            {quantity} талонов
+            {quantity} купонов
           </span>
           {badge && (
             <span className="text-xs font-semibold text-white bg-emerald-500 px-2 py-0.5 rounded-full">
@@ -95,7 +95,7 @@ function PackageCard({ quantity, priceKopecks, badge, loading, onBuy }: PackageC
           )}
         </div>
         <p className="text-xs text-[var(--tg-theme-hint-color)] mt-0.5">
-          {formatPrice(pricePerTalon)} за талон
+          {formatPrice(pricePerCoupon)} за купон
         </p>
       </div>
       <div className="text-right">
@@ -134,20 +134,20 @@ function TxRow({ delta, description, createdAt }: TxRowProps) {
 
 // ─── Main page ───────────────────────────────────────────
 
-export default function TalonsPage() {
+export default function CouponsPage() {
   const navigate = useNavigate()
   const { haptic, tg } = useTelegram()
   const { profile, setProfile } = useUserStore()
-  const [selectedType, setSelectedType] = useState<TalonType>('lunch')
+  const [selectedType, setSelectedType] = useState<CouponType>('lunch')
   const [buyingQty, setBuyingQty] = useState<number | null>(null)
 
   useBackButton()
 
   if (!profile) return null
 
-  const { talons } = profile
-  const lunchBalance = talons.find((t) => t.type === 'lunch')?.balance ?? 0
-  const coffeeBalance = talons.find((t) => t.type === 'coffee')?.balance ?? 0
+  const { coupons } = profile
+  const lunchBalance = coupons.find((c) => c.type === 'lunch')?.balance ?? 0
+  const coffeeBalance = coupons.find((c) => c.type === 'coffee')?.balance ?? 0
 
   const transactions = MOCK_TRANSACTIONS.filter((t) => t.type === selectedType)
 
@@ -156,7 +156,7 @@ export default function TalonsPage() {
     setBuyingQty(quantity)
 
     try {
-      const { newBalance } = await buyTalons(selectedType, quantity)
+      const { newBalance } = await buyCoupons(selectedType, quantity)
       haptic.notificationOccurred('success')
 
       // profile is guaranteed non-null here (guard at render level)
@@ -165,14 +165,14 @@ export default function TalonsPage() {
       setProfile({
         user: p.user,
         subscriptions: p.subscriptions,
-        talons: talons.map((t) =>
-          t.type === selectedType ? { ...t, balance: newBalance } : t,
+        coupons: coupons.map((c) =>
+          c.type === selectedType ? { ...c, balance: newBalance } : c,
         ),
       })
 
       tg.showPopup({
         title: 'Успешно!',
-        message: `Куплено ${quantity} ${plural(quantity, 'талон', 'талона', 'талонов')}. Баланс: ${newBalance}`,
+        message: `Куплено ${quantity} ${plural(quantity, 'купон', 'купона', 'купонов')}. Баланс: ${newBalance}`,
         buttons: [{ id: 'ok', type: 'ok' }],
       })
     } catch {
@@ -196,7 +196,7 @@ export default function TalonsPage() {
             ←
           </button>
           <div>
-            <h1 className="text-[28px] font-bold text-gray-900 tracking-tight">Талоны</h1>
+            <h1 className="text-[28px] font-bold text-gray-900 tracking-tight">Купоны</h1>
             <p className="text-sm text-[var(--tg-theme-hint-color)] mt-0.5">
               Предоплатите обеды и кофе по сниженной цене
             </p>
@@ -206,7 +206,7 @@ export default function TalonsPage() {
 
       <div className="flex-1 px-4 pb-6 space-y-6 animate-fade-in">
 
-        {/* Selector типа талона */}
+        {/* Selector типа купона */}
         <div className="flex gap-2">
           <TypeTab
             active={selectedType === 'lunch'}
@@ -227,10 +227,10 @@ export default function TalonsPage() {
         {/* Пакеты */}
         <div>
           <h2 className="text-xs font-semibold uppercase tracking-wider text-[var(--tg-theme-hint-color)] px-1 mb-2">
-            Купить талоны
+            Купить купоны
           </h2>
           <div className="space-y-2">
-            {TALON_PACKAGES.map((pkg) => (
+            {COUPON_PACKAGES.map((pkg) => (
               <PackageCard
                 key={pkg.quantity}
                 quantity={pkg.quantity}
@@ -269,7 +269,7 @@ export default function TalonsPage() {
         {/* Описание */}
         <div className="bg-[var(--tg-theme-secondary-bg-color)] rounded-2xl p-4">
           <p className="text-xs text-[var(--tg-theme-hint-color)] leading-relaxed">
-            Талоны списываются автоматически при оплате заказа. Срок действия — 1 год с момента покупки.
+            Купоны списываются автоматически при оплате заказа. Срок действия — 1 год с момента покупки.
             Оплата картой через Т-Банк.
           </p>
         </div>

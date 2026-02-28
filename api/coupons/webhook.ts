@@ -12,12 +12,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const receivedToken = payload.Token as string
     if (!receivedToken || !verifyWebhookToken(payload, receivedToken)) {
-      console.error('T-Bank talon webhook: invalid token')
+      console.error('T-Bank coupon webhook: invalid token')
       return res.status(200).send('OK')
     }
 
     const status = payload.Status as string
-    const tbOrderId = String(payload.OrderId) // "talon-<orderId>"
+    const tbOrderId = String(payload.OrderId) // "coupon-<orderId>"
 
     if (status !== 'CONFIRMED' || !payload.Success) {
       return res.status(200).send('OK')
@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
              u.telegram_id AS "telegramId"
       FROM orders o
       JOIN users u ON u.id = o.user_id
-      WHERE o.id = ${Number(tbOrderId.replace('talon-', ''))}
+      WHERE o.id = ${Number(tbOrderId.replace('coupon-', ''))}
         AND o.status = 'pending'
     `
 
@@ -44,28 +44,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       telegramId: number
     }[])[0]
 
-    // Parse the comment: "talon_purchase:<type>:<quantity>"
-    const match = order.comment.match(/^talon_purchase:(lunch|coffee):(\d+)$/)
+    // Parse the comment: "coupon_purchase:<type>:<quantity>"
+    const match = order.comment.match(/^coupon_purchase:(lunch|coffee):(\d+)$/)
     if (!match) return res.status(200).send('OK')
 
-    const talonType = match[1] as 'lunch' | 'coffee'
+    const couponType = match[1] as 'lunch' | 'coffee'
     const quantity = Number(match[2])
 
-    // Credit the talons
-    const talonRows = await sql`
+    // Credit the coupons (DB table is still `talons`)
+    const couponRows = await sql`
       INSERT INTO talons (user_id, type, balance)
-      VALUES (${order.userId}, ${talonType}, ${quantity})
+      VALUES (${order.userId}, ${couponType}, ${quantity})
       ON CONFLICT (user_id, type)
       DO UPDATE SET balance = talons.balance + ${quantity}, updated_at = NOW()
       RETURNING id, balance
     `
 
-    const talon = (talonRows as { id: number; balance: number }[])[0]
+    const coupon = (couponRows as { id: number; balance: number }[])[0]
 
     // Log transaction
     await sql`
       INSERT INTO talon_transactions (talon_id, order_id, delta, description)
-      VALUES (${talon.id}, ${order.id}, ${quantity}, ${'Покупка ' + quantity + ' талонов'})
+      VALUES (${coupon.id}, ${order.id}, ${quantity}, ${'Покупка ' + quantity + ' купонов'})
     `
 
     // Update order status
@@ -76,14 +76,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Notify user
     await notifyUser(
       order.telegramId,
-      `✅ <b>Талоны зачислены!</b>\n\n` +
-      `Куплено: ${quantity} ${plural(quantity, 'талон', 'талона', 'талонов')}\n` +
-      `Баланс: ${talon.balance} ${plural(talon.balance, 'талон', 'талона', 'талонов')}`,
+      `✅ <b>Купоны зачислены!</b>\n\n` +
+      `Куплено: ${quantity} ${plural(quantity, 'купон', 'купона', 'купонов')}\n` +
+      `Баланс: ${coupon.balance} ${plural(coupon.balance, 'купон', 'купона', 'купонов')}`,
     )
 
     return res.status(200).send('OK')
   } catch (err) {
-    console.error('/api/talons/webhook error:', err)
+    console.error('/api/coupons/webhook error:', err)
     return res.status(200).send('OK')
   }
 }

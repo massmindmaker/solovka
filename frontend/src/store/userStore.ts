@@ -1,12 +1,12 @@
 import { create } from 'zustand'
-import type { UserProfile, TalonBalance, Subscription } from '@/types'
+import type { UserProfile, CouponBalance, Subscription } from '@/types'
 
 interface UserStore {
   profile: UserProfile | null
   loading: boolean
   setProfile: (profile: UserProfile) => void
   setLoading: (loading: boolean) => void
-  getTalonBalance: (type: 'lunch' | 'coffee') => number
+  getCouponBalance: (type: 'lunch' | 'coffee') => number
   hasActiveSubscription: (type: 'lunch' | 'coffee') => boolean
 }
 
@@ -17,9 +17,9 @@ export const useUserStore = create<UserStore>((set, get) => ({
   setProfile: (profile) => set({ profile, loading: false }),
   setLoading: (loading) => set({ loading }),
 
-  getTalonBalance: (type) => {
-    const talon = get().profile?.talons.find((t: TalonBalance) => t.type === type)
-    return talon?.balance ?? 0
+  getCouponBalance: (type) => {
+    const coupon = get().profile?.coupons.find((c: CouponBalance) => c.type === type)
+    return coupon?.balance ?? 0
   },
 
   hasActiveSubscription: (type) => {

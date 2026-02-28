@@ -77,7 +77,7 @@ export function ProfileSkeleton() {
           <div className="skeleton h-4 w-24" />
         </div>
       </div>
-      {/* Talons */}
+      {/* Coupons */}
       <div className="space-y-2">
         <div className="skeleton h-3 w-16" />
         <div className="bg-[var(--tg-theme-secondary-bg-color)] rounded-xl p-4 space-y-3">
