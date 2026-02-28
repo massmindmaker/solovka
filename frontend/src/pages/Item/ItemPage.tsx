@@ -84,16 +84,19 @@ export default function ItemPage() {
 
   return (
     <div className="flex flex-col min-h-screen animate-fade-in">
-      {/* Изображение / заглушка — уменьшено, чтобы кнопка Добавить была видна */}
-      <div className="relative w-full h-56 bg-gradient-to-br from-orange-100 to-amber-50 flex items-center justify-center flex-shrink-0">
+      {/* Изображение / заглушка */}
+      <div className="relative w-full h-56 bg-gradient-to-br from-orange-100 to-amber-50 flex-shrink-0 overflow-hidden">
         {item.imageUrl ? (
           <img
             src={item.imageUrl}
             alt={item.name}
-            className="w-full h-full object-cover"
+            className="absolute top-0 left-0 w-full h-full object-cover"
+            loading="lazy"
           />
         ) : (
-          <span className="text-7xl leading-none">{emoji}</span>
+          <div className="flex items-center justify-center w-full h-full">
+            <span className="text-7xl leading-none">{emoji}</span>
+          </div>
         )}
 
         {/* Кнопка «Назад» поверх изображения */}

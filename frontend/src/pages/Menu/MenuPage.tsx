@@ -55,12 +55,19 @@ function MenuCard({ item, cartQty, isFavorite, onAdd, onRemove, onToggleFavorite
       onClick={onClick}
       className="relative bg-white rounded-2xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.08)] active:scale-[0.97] transition-transform cursor-pointer select-none"
     >
-      {/* Изображение — 3:2 по скиллу */}
-      <div className="aspect-[3/2] bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
+      {/* Изображение — 3:2 */}
+      <div className="relative aspect-[3/2] bg-gradient-to-br from-gray-100 to-gray-50 overflow-hidden">
         {item.imageUrl ? (
-          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+          <img
+            src={item.imageUrl}
+            alt={item.name}
+            className="absolute top-0 left-0 w-full h-full object-cover"
+            loading="lazy"
+          />
         ) : (
-          <span className="text-5xl">{emoji}</span>
+          <div className="flex items-center justify-center w-full h-full">
+            <span className="text-5xl">{emoji}</span>
+          </div>
         )}
       </div>
 

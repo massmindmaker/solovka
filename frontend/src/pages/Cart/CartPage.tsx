@@ -24,11 +24,13 @@ function CartRow({ item, onRemove, onQuantityChange }: CartRowProps) {
   return (
     <div className="flex items-center gap-3 py-3.5 border-b border-[var(--tg-theme-secondary-bg-color)] last:border-0 animate-fade-in">
       {/* Картинка / emoji */}
-      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-50 flex items-center justify-center flex-shrink-0 overflow-hidden">
+      <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-100 to-amber-50 flex-shrink-0 overflow-hidden">
         {item.imageUrl ? (
-          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+          <img src={item.imageUrl} alt={item.name} className="absolute top-0 left-0 w-full h-full object-cover" loading="lazy" />
         ) : (
-          <span className="text-2xl">🍽</span>
+          <div className="flex items-center justify-center w-full h-full">
+            <span className="text-2xl">🍽</span>
+          </div>
         )}
       </div>
 
