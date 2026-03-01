@@ -5,7 +5,7 @@ import {
   completeDelivery,
   type DeliveryOrder,
 } from '../api/delivery'
-import { formatPrice, formatDateTime, cn } from '@/utils'
+import { formatPrice, cn } from '@/utils'
 import { useTelegram } from '@/hooks/useTelegram'
 import { FullScreenSpinner } from '@/components/Spinner'
 import ErrorState from '@/components/ErrorState'

@@ -30,7 +30,7 @@ export default function AdminDailyMenuPage() {
   const { haptic } = useTelegram()
   const [date, setDate] = useState(todayStr)
   const [allItems, setAllItems] = useState<AdminMenuItem[]>([])
-  const [dailyItems, setDailyItems] = useState<DailyMenuItem[]>([])
+  const [, setDailyItems] = useState<DailyMenuItem[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
